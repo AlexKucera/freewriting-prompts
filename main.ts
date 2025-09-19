@@ -1,134 +1,156 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+// ABOUTME: Main plugin file for Freewriting Prompts - generates AI-powered writing prompts
+// ABOUTME: Coordinates between services, commands, and Obsidian's plugin lifecycle
 
-// Remember to rename these classes and interfaces!
+import { Editor, MarkdownView, Notice, Plugin } from 'obsidian';
+import { FreewritingPromptsSettings } from './types';
+import { DEFAULT_SETTINGS, FreewritingPromptsSettingTab } from './settings';
+import { PromptGeneratorService } from './services/promptGenerator';
+import { StaggeredPromptsCommand } from './commands/staggeredPrompts';
+import { NotePromptsCommand } from './commands/notePrompts';
 
-interface MyPluginSettings {
-	mySetting: string;
-}
+export default class FreewritingPromptsPlugin extends Plugin {
+    settings: FreewritingPromptsSettings;
+    promptGenerator: PromptGeneratorService;
+    staggeredCommand: StaggeredPromptsCommand;
+    noteCommand: NotePromptsCommand;
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
+    async onload() {
+        console.log('Loading Freewriting Prompts plugin');
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+        await this.loadSettings();
 
-	async onload() {
-		await this.loadSettings();
+        // Initialize services
+        this.promptGenerator = new PromptGeneratorService(this.settings);
+        this.staggeredCommand = new StaggeredPromptsCommand(this.promptGenerator);
+        this.noteCommand = new NotePromptsCommand(this.promptGenerator);
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+        // Register commands
+        this.registerCommands();
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+        // Add settings tab
+        this.addSettingTab(new FreewritingPromptsSettingTab(this.app, this));
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, _view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+        console.log('Freewriting Prompts plugin loaded');
+    }
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
-		});
+    onunload() {
+        console.log('Unloading Freewriting Prompts plugin');
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+        // Stop any running staggered prompts
+        if (this.staggeredCommand) {
+            this.staggeredCommand.stop();
+        }
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
+        // Clear prompt cache
+        if (this.promptGenerator) {
+            this.promptGenerator.clearCache();
+        }
+    }
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-	}
+    // MARK: - Settings Management
 
-	onunload() {
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
 
-	}
+    async saveSettings() {
+        await this.saveData(this.settings);
 
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
+        // Update the prompt generator with new settings
+        if (this.promptGenerator) {
+            this.promptGenerator.updateApiKey(this.settings.apiKey);
+        }
+    }
 
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
-}
+    // MARK: - Command Registration
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
+    private registerCommands() {
+        // Staggered Freewriting Prompts command
+        this.addCommand({
+            id: 'staggered-freewriting-prompts',
+            name: 'Staggered Freewriting Prompts',
+            callback: async () => {
+                await this.executeStaggeredPrompts();
+            }
+        });
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
+        // Freewriting Prompt command (editor-based)
+        this.addCommand({
+            id: 'freewriting-prompt',
+            name: 'Freewriting Prompt',
+            editorCallback: async (editor: Editor, view: MarkdownView) => {
+                await this.executeNotePrompts(editor, view);
+            }
+        });
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
+        // Stop staggered prompts command
+        this.addCommand({
+            id: 'stop-staggered-prompts',
+            name: 'Stop Staggered Prompts',
+            callback: () => {
+                this.stopStaggeredPrompts();
+            }
+        });
+    }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+    // MARK: - Command Implementations
 
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+    private async executeStaggeredPrompts(): Promise<void> {
+        // Check if staggered prompts are already running
+        if (this.staggeredCommand.isRunning()) {
+            new Notice('Staggered prompts are already running. Use "Stop Staggered Prompts" to stop them first.');
+            return;
+        }
 
-	display(): void {
-		const {containerEl} = this;
+        // Validate settings
+        const validation = this.promptGenerator.validateSettings(this.settings);
+        if (!validation.isValid) {
+            new Notice(`Settings validation failed: ${validation.errors.join(', ')}`);
+            return;
+        }
 
-		containerEl.empty();
+        try {
+            await this.staggeredCommand.execute(this.settings);
+        } catch (error) {
+            console.error('Error executing staggered prompts:', error);
+            // Error handling is done in the command layer
+        }
+    }
 
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
-	}
+    private async executeNotePrompts(editor: Editor, view: MarkdownView): Promise<void> {
+        // Check if we can execute the command
+        if (!NotePromptsCommand.canExecute(editor, view)) {
+            new Notice('Please open a note and place your cursor where you want to insert prompts.');
+            return;
+        }
+
+        // Validate settings
+        const validation = this.promptGenerator.validateSettings(this.settings);
+        if (!validation.isValid) {
+            new Notice(`Settings validation failed: ${validation.errors.join(', ')}`);
+            return;
+        }
+
+        try {
+            await this.noteCommand.execute(this.settings, editor, view);
+        } catch (error) {
+            console.error('Error executing note prompts:', error);
+            // Error handling is done in the command layer
+        }
+    }
+
+    private stopStaggeredPrompts(): void {
+        if (this.staggeredCommand.isRunning()) {
+            this.staggeredCommand.stop();
+            new Notice('Staggered prompts stopped');
+        } else {
+            new Notice('No staggered prompts are currently running');
+        }
+    }
+
+    // MARK: - Public API for Settings
+
+    getStaggeredStatus(): { isRunning: boolean; currentPrompt: number; totalPrompts: number } {
+        return this.staggeredCommand.getStatus();
+    }
 }
