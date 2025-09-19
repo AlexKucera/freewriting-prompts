@@ -1,94 +1,281 @@
-# Obsidian Sample Plugin
+# Freewriting Prompts
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/alexanderkucera/obsidian-freewriting-prompts)](https://github.com/alexanderkucera/obsidian-freewriting-prompts/releases)
+[![License: MIT](https://img.shields.io/github/license/alexanderkucera/obsidian-freewriting-prompts?color=yellow)](https://opensource.org/licenses/MIT)
+![](https://img.shields.io/badge/mobile_supported-green?label=obsidian&labelColor=purple)
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+Generate AI-powered writing prompts for freewriting sessions using Anthropic's Claude. Break through writer's block with creative, thought-provoking prompts delivered exactly when you need them.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+## Table of Contents
 
-## First time developing plugins?
+- [Key Features](#key-features)
+- [Why This Plugin?](#why-this-plugin)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Commands](#commands)
+- [Settings](#settings)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
-Quick starting guide for new plugin devs:
+## Key Features
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+- **🎯 Two Prompt Modes**: Staggered notifications for timed writing sessions, or direct note insertion
+- **🤖 AI-Powered**: Uses Anthropic's Claude models for creative, diverse prompt generation
+- **⚡ Customizable Timing**: Configure prompt count and delay intervals for your writing rhythm
+- **🎨 Personalized Prompts**: System prompts and examples to match your writing style
+- **📱 Cross-Platform**: Works on both desktop and mobile Obsidian
+- **🔧 Smart Caching**: Avoid redundant API calls with intelligent prompt caching
+- **🔑 API Key Testing**: Built-in connectivity testing with detailed feedback
+- **⏱️ Real-Time Progress**: Visual feedback for prompt generation and delivery
 
-## Releasing new releases
+## Why This Plugin?
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+Writer's block is real, and sometimes you need external inspiration to get the creative juices flowing. This plugin was born from the need for:
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+- **Timed Writing Sessions**: Get prompts delivered at intervals to maintain writing momentum
+- **Instant Inspiration**: Generate multiple prompts directly in your notes when needed
+- **Quality Over Quantity**: AI-generated prompts that are actually interesting and thought-provoking
+- **Seamless Integration**: Works within your existing Obsidian workflow without disruption
 
-## Adding your plugin to the community plugin list
+Rather than browsing random prompt websites or books, get personalized, AI-generated prompts delivered right in your writing environment.
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+## Installation
 
-## How to use
+### Method 1: Community Plugin Store (Recommended)
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+1. Open **Settings** → **Community Plugins**
+2. **Disable Safe Mode** if needed
+3. Click **Browse** and search for "Freewriting Prompts"
+4. **Install** and **Enable** the plugin
 
-## Manually installing the plugin
+### Method 2: Manual Installation
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+1. Go to [GitHub Releases](https://github.com/alexanderkucera/obsidian-freewriting-prompts/releases)
+2. Download the latest `main.js`, `manifest.json`, and `styles.css`
+3. Create a folder `{VaultFolder}/.obsidian/plugins/freewriting-prompts/`
+4. Place the downloaded files in this folder
+5. Reload Obsidian (`Ctrl/Cmd + R` or restart)
+6. Enable the plugin in **Settings** → **Community Plugins**
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint ./src/`
+### Method 3: BRAT (Beta Reviewer's Auto-update Tool)
 
-## Funding URL
+1. Install the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat)
+2. Add this repository: `alexanderkucera/obsidian-freewriting-prompts`
+3. Enable the plugin after installation
 
-You can include funding URLs where people who use your plugin can financially support it.
+## Quick Start
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+### 1. Get Your Anthropic API Key
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+1. Visit [Anthropic Console](https://console.anthropic.com/)
+2. Create an account or sign in
+3. Generate an API key from the dashboard
+4. Copy the key (starts with `sk-ant-`)
+
+### 2. Configure the Plugin
+
+1. Go to **Settings** → **Community Plugins** → **Freewriting Prompts**
+2. Paste your API key in the **Anthropic API Key** field
+3. Click **Test Connection** to verify it works
+4. Adjust other settings as desired
+
+### 3. Start Using Prompts
+
+**For Timed Writing Sessions:**
+1. Use `Ctrl/Cmd + P` → "Staggered Freewriting Prompts"
+2. Prompts will appear as notifications at your configured intervals
+
+**For Note Integration:**
+1. Open any note and place your cursor where you want prompts
+2. Use `Ctrl/Cmd + P` → "Freewriting Prompt"
+3. Prompts will be inserted directly into your note
+
+## Configuration
+
+### API Configuration
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **API Key** | Your Anthropic API key | _(required)_ |
+| **Model** | Claude model to use | claude-3-haiku-20240307 |
+
+### Command Configuration
+
+| Setting | Description | Default | Range |
+|---------|-------------|---------|-------|
+| **Staggered Count** | Number of timed prompts | 10 | 1-50 |
+| **Delay Seconds** | Seconds between prompts | 6 | 1-300 |
+| **Note Count** | Prompts inserted in notes | 3 | 1-20 |
+
+### Prompt Customization
+
+- **System Prompt**: Instructions for the AI on how to generate prompts
+- **Staggered Example**: Example prompt for timed sessions
+- **Freewriting Example**: Example prompt for note insertion
+
+## Commands
+
+### Staggered Freewriting Prompts
+
+Delivers prompts as timed notifications perfect for writing sprints:
+
+1. Generates your configured number of prompts
+2. Shows the first prompt immediately
+3. Delivers remaining prompts at your specified intervals
+4. Each notification shows "Prompt X/Y" with the writing prompt
+
+**Use Cases:**
+- Timed writing sessions (Pomodoro technique)
+- Breaking through writer's block
+- Maintaining writing momentum
+- Creative warm-up exercises
+
+### Freewriting Prompt
+
+Inserts prompts directly into your current note:
+
+1. Generates prompts based on your settings
+2. Inserts them at your cursor position
+3. Formats as a timestamped list
+4. Perfect for collecting prompts for later use
+
+**Use Cases:**
+- Building prompt collections
+- Planning writing sessions
+- Creating prompt libraries
+- Inspiration gathering
+
+### Stop Staggered Prompts
+
+Cancels any running staggered prompt sequence.
+
+## Settings
+
+### Advanced Features
+
+- **Test API Key**: Verify your connection with detailed feedback including:
+  - Response time
+  - Token usage
+  - Model confirmation
+  - Specific error messages for troubleshooting
+
+- **Clear Cache**: Force regeneration of prompts by clearing the 10-minute cache
+
+### Supported Models
+
+- claude-3-haiku-20240307 (fastest, most cost-effective)
+- claude-3-sonnet-20240229 (balanced performance)
+- claude-3-opus-20240229 (highest quality)
+- claude-3-5-sonnet-20241022 (latest sonnet)
+- claude-3-5-haiku-20241022 (latest haiku)
+
+## Troubleshooting
+
+### Common Issues
+
+| Problem | Solution |
+|---------|----------|
+| **"API key is required"** | Enter your Anthropic API key in settings |
+| **"Network error"** | Check internet connection and API key validity |
+| **"Rate limit exceeded"** | Wait a moment and try again, or upgrade your Anthropic plan |
+| **No prompts generated** | Verify API key works with the test button |
+
+### Error Messages
+
+The plugin provides detailed error messages for different scenarios:
+
+- **401 Unauthorized**: Invalid API key
+- **403 Forbidden**: Account or billing issues
+- **429 Rate Limited**: Too many requests
+- **500 Server Error**: Anthropic service issues
+- **Network Error**: Connection problems
+
+### Debug Steps
+
+1. **Test API Key**: Use the "Test Connection" button in settings
+2. **Check Console**: Open Developer Tools (F12) for detailed error logs
+3. **Verify Settings**: Ensure all required fields are filled
+4. **Clear Cache**: Try clearing the prompt cache
+5. **Restart Plugin**: Disable and re-enable the plugin
+
+### Getting Help
+
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/alexanderkucera/obsidian-freewriting-prompts/issues)
+- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/alexanderkucera/obsidian-freewriting-prompts/discussions)
+
+## Development
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/alexanderkucera/obsidian-freewriting-prompts.git
+cd obsidian-freewriting-prompts
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-If you have multiple URLs, you can also do:
+### Project Structure
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+```
+freewriting-prompts/
+├── api/
+│   └── anthropicClient.ts    # Anthropic API integration
+├── commands/
+│   ├── staggeredPrompts.ts   # Timed notification prompts
+│   └── notePrompts.ts        # Note insertion prompts
+├── services/
+│   └── promptGenerator.ts    # Prompt generation service
+├── main.ts                   # Plugin entry point
+├── settings.ts               # Settings interface
+└── types.ts                  # Type definitions
 ```
 
-## API Documentation
+### Build Commands
 
-See https://github.com/obsidianmd/obsidian-api
+```bash
+npm run dev      # Development with file watching
+npm run build    # Production build with type checking
+npm run version  # Version bump and manifest update
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Guidelines
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Follow** TypeScript and ESLint conventions
+4. **Test** your changes thoroughly
+5. **Commit** with descriptive messages
+6. **Submit** a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+If you find this plugin helpful, consider supporting its development:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/babylondreams)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/babylondreams)
+[![Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://patreon.com/babylondreams)
+
+## Contact
+
+**Author**: Alexander Kucera
+**Website**: [alexanderkucera.com](https://alexanderkucera.com)
+**GitHub**: [@AlexKucera](https://github.com/AlexKucera)
+
+---
+
+*Happy writing! 📝✨*

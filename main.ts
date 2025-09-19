@@ -15,8 +15,6 @@ export default class FreewritingPromptsPlugin extends Plugin {
     noteCommand: NotePromptsCommand;
 
     async onload() {
-        console.log('Loading Freewriting Prompts plugin');
-
         await this.loadSettings();
 
         // Initialize services
@@ -29,13 +27,9 @@ export default class FreewritingPromptsPlugin extends Plugin {
 
         // Add settings tab
         this.addSettingTab(new FreewritingPromptsSettingTab(this.app, this));
-
-        console.log('Freewriting Prompts plugin loaded');
     }
 
     onunload() {
-        console.log('Unloading Freewriting Prompts plugin');
-
         // Stop any running staggered prompts
         if (this.staggeredCommand) {
             this.staggeredCommand.stop();

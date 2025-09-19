@@ -2,9 +2,14 @@
 	"id": "freewriting-prompts",
 	"name": "Freewriting Prompts",
 	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
+	"minAppVersion": "1.9.12",
 	"description": "Generate AI-powered writing prompts for freewriting sessions using Anthropic's Claude.",
-	"author": "Alexander",
-	"authorUrl": "",
+	"author": "Alexander Kucera",
+	"authorUrl": "https://alexanderkucera.com",
+	"fundingUrl": {
+		"Buy Me a Coffee": "https://buymeacoffee.com/babylondreams",
+		"Ko-fi": "https://ko-fi.com/babylondreams",
+		"Patreon": "https://patreon.com/babylondreams"
+	},
 	"isDesktopOnly": false
 }
