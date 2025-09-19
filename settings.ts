@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS: FreewritingPromptsSettings = {
     delaySeconds: 6,
     noteCount: 3,
     systemPrompt: 'You are a creative writing assistant. Generate engaging, thought-provoking writing prompts that inspire creativity and help writers overcome blocks. Focus on variety, originality, and emotional depth.',
-    staggeredExamplePrompt: 'Write about a character who discovers they can see the last thing a person touched before they died.',
+    staggeredExamplePrompt: 'The interesting thing about a rose is…',
     freewritingExamplePrompt: 'Describe a world where colors have been outlawed and only exist in secret underground galleries.'
 };
 
