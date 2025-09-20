@@ -32,7 +32,7 @@ export class StaggeredPromptsCommand {
             this.currentIndex = 0;
 
             // Show the first prompt immediately
-            this.showCurrentPrompt();
+            this.showCurrentPrompt(settings.delaySeconds);
 
             // If there are more prompts, start the interval
             if (prompts.length > 1) {
@@ -65,7 +65,7 @@ export class StaggeredPromptsCommand {
             this.currentIndex++;
 
             if (this.currentIndex < this.promptQueue.length) {
-                this.showCurrentPrompt();
+                this.showCurrentPrompt(delaySeconds);
             } else {
                 // We've shown all prompts, stop the interval
                 this.stop();
@@ -74,16 +74,19 @@ export class StaggeredPromptsCommand {
         }, delaySeconds * 1000);
     }
 
-    private showCurrentPrompt(): void {
+    private showCurrentPrompt(delaySeconds: number): void {
         if (this.currentIndex < this.promptQueue.length) {
             const prompt = this.promptQueue[this.currentIndex];
             const promptNumber = this.currentIndex + 1;
             const totalPrompts = this.promptQueue.length;
 
-            // Create a longer-lasting notice for the prompt
+            // Calculate notification duration: slightly less than delay to avoid overlap
+            // Subtract 500ms to allow for fade-out before next prompt appears
+            const notificationDuration = Math.max(1000, (delaySeconds * 1000) - 500);
+
             const notice = new Notice(
                 `Writing Prompt ${promptNumber}/${totalPrompts}:\n\n${prompt}`,
-                8000 // Show for 8 seconds
+                notificationDuration
             );
 
             // Add CSS class for styling
