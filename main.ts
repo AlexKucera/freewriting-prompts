@@ -59,19 +59,19 @@ export default class FreewritingPromptsPlugin extends Plugin {
     // MARK: - Command Registration
 
     private registerCommands() {
-        // Staggered Freewriting Prompts command
+        // Staggered prompts command
         this.addCommand({
-            id: 'staggered-freewriting-prompts',
-            name: 'Staggered Freewriting Prompts',
+            id: 'staggered-prompts',
+            name: 'Show Staggered Prompts',
             callback: async () => {
                 await this.executeStaggeredPrompts();
             }
         });
 
-        // Freewriting Prompt command (editor-based)
+        // Note prompt command (editor-based)
         this.addCommand({
-            id: 'freewriting-prompt',
-            name: 'Freewriting Prompt',
+            id: 'note-prompts',
+            name: 'Add Note Prompts',
             editorCallback: async (editor: Editor, view: MarkdownView) => {
                 await this.executeNotePrompts(editor, view);
             }

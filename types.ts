@@ -3,7 +3,7 @@
 
 export interface FreewritingPromptsSettings {
     apiKey: string;
-    model: string;
+    model: AnthropicModel;
     staggeredCount: number;
     delaySeconds: number;
     noteCount: number;
@@ -47,11 +47,12 @@ export interface GeneratedPrompt {
 }
 
 export const ANTHROPIC_MODELS = [
-    'claude-3-haiku-20240307',
-    'claude-3-sonnet-20240229',
-    'claude-3-opus-20240229',
-    'claude-3-5-sonnet-20241022',
-    'claude-3-5-haiku-20241022'
+    'claude-opus-4-1-20250805',
+    'claude-opus-4-20250514',
+    'claude-sonnet-4-20250514',
+    'claude-3-7-sonnet-latest',
+    'claude-3-5-haiku-latest',
+    'claude-3-haiku-20240307'
 ] as const;
 
 export type AnthropicModel = typeof ANTHROPIC_MODELS[number];

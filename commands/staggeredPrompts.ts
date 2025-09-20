@@ -86,13 +86,9 @@ export class StaggeredPromptsCommand {
                 8000 // Show for 8 seconds
             );
 
-            // Add some styling to make it more prominent
+            // Add CSS class for styling
             const noticeEl = notice.noticeEl;
             if (noticeEl) {
-                noticeEl.style.maxWidth = '400px';
-                noticeEl.style.whiteSpace = 'pre-wrap';
-                noticeEl.style.fontSize = '14px';
-                noticeEl.style.lineHeight = '1.4';
                 noticeEl.addClass('freewriting-prompt-notice');
             }
         }

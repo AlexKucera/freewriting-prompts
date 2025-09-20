@@ -7,7 +7,7 @@ import { FreewritingPromptsSettings, ANTHROPIC_MODELS } from './types';
 
 export const DEFAULT_SETTINGS: FreewritingPromptsSettings = {
     apiKey: '',
-    model: 'claude-3-haiku-20240307',
+    model: 'claude-3-5-haiku-latest' as const,
     staggeredCount: 10,
     delaySeconds: 6,
     noteCount: 3,
@@ -194,7 +194,7 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
 
         try {
             const client = this.plugin.promptGenerator.anthropicClient;
-            const result = await client.testApiKey(this.plugin.settings.model as any);
+            const result = await client.testApiKey(this.plugin.settings.model);
 
             if (result.success) {
                 // Success - show detailed information
