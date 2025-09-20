@@ -7,6 +7,9 @@ import { AnthropicRequest, AnthropicResponse, AnthropicModel } from '../types';
 export class AnthropicClient {
     private apiKey: string;
     private baseUrl = 'https://api.anthropic.com/v1/messages';
+    private readonly SYSTEM_PROMPT_SUFFIX = '\n\nIMPORTANT OUTPUT REQUIREMENTS:\n- Return ONLY the numbered writing prompts, nothing else\n- Do not include any explanations, questions, or additional commentary\n- Do not ask if the user wants more prompts or different styles\n- Format: numbered list with one prompt per line (1. [prompt], 2. [prompt], etc.)';
+
+    private readonly STAGGERED_PROMPT_MODIFIER = '\n\nFOR STAGGERED PROMPTS - MAKE THEM EXTREMELY SHORT AND DIRECT:\n- Each prompt should be answerable in 1-5 words or a single sentence\n- Focus on immediate, concrete observations or quick thoughts\n- Avoid complex scenarios or deep philosophical questions\n- Examples: "What color is closest to you?", "Your favorite word today:", "First sound you hear:", "Describe your mood in one word", "Name something soft"\n- Keep prompts simple, immediate, and concrete';
 
     constructor(apiKey: string) {
         this.apiKey = apiKey;
@@ -18,7 +21,8 @@ export class AnthropicClient {
         count: number,
         model: AnthropicModel,
         systemPrompt: string,
-        examplePrompt: string
+        examplePrompt: string,
+        type: 'staggered' | 'note'
     ): Promise<string[]> {
         if (!this.apiKey) {
             throw new Error('API key is required');
@@ -26,11 +30,19 @@ export class AnthropicClient {
 
         try {
             const userMessage = this.createUserMessage(count, examplePrompt);
+
+            // Build system prompt with type-specific modifiers
+            let finalSystemPrompt = systemPrompt;
+            if (type === 'staggered') {
+                finalSystemPrompt += this.STAGGERED_PROMPT_MODIFIER;
+            }
+            finalSystemPrompt += this.SYSTEM_PROMPT_SUFFIX;
+
             const request: AnthropicRequest = {
                 model,
                 max_tokens: 1000,
                 messages: [{ role: 'user', content: userMessage }],
-                system: systemPrompt
+                system: finalSystemPrompt
             };
 
             const response = await this.makeRequest(request);
@@ -48,13 +60,13 @@ export class AnthropicClient {
     // MARK: - Private Methods
 
     private createUserMessage(count: number, examplePrompt: string): string {
-        const baseMessage = `Please generate ${count} creative writing prompts.`;
+        const baseMessage = `Generate exactly ${count} creative writing prompts. Return ONLY the numbered prompts with no additional text or commentary.`;
 
         if (examplePrompt.trim()) {
-            return `${baseMessage} Here's an example of the style I'm looking for:\n\n"${examplePrompt}"\n\nPlease provide ${count} similar prompts, each on a new line, numbered 1-${count}.`;
+            return `${baseMessage}\n\nExample style: "${examplePrompt}"\n\nProvide ${count} similar prompts in this exact format:\n1. [prompt]\n2. [prompt]\n(etc.)`;
         }
 
-        return `${baseMessage} Please provide ${count} diverse and engaging writing prompts, each on a new line, numbered 1-${count}.`;
+        return `${baseMessage}\n\nProvide ${count} diverse writing prompts in this exact format:\n1. [prompt]\n2. [prompt]\n(etc.)`;
     }
 
     private async makeRequest(request: AnthropicRequest): Promise<AnthropicResponse> {
