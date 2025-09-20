@@ -24,7 +24,7 @@ export class PromptGeneratorService {
     async generateStaggeredPrompts(settings: FreewritingPromptsSettings): Promise<string[]> {
         return this.generatePrompts(
             settings.staggeredCount,
-            settings.model as AnthropicModel,
+            settings.model,
             settings.systemPrompt,
             settings.staggeredExamplePrompt,
             'staggered'
@@ -34,7 +34,7 @@ export class PromptGeneratorService {
     async generateNotePrompts(settings: FreewritingPromptsSettings): Promise<string[]> {
         return this.generatePrompts(
             settings.noteCount,
-            settings.model as AnthropicModel,
+            settings.model,
             settings.systemPrompt,
             settings.freewritingExamplePrompt,
             'note'
@@ -73,7 +73,7 @@ export class PromptGeneratorService {
 
         try {
             new Notice('Generating prompts...');
-            const prompts = await this.client.generatePrompts(count, model, systemPrompt, examplePrompt);
+            const prompts = await this.client.generatePrompts(count, model, systemPrompt, examplePrompt, type);
 
             const generatedPrompts: GeneratedPrompt[] = prompts.map(text => ({
                 text,
