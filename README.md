@@ -41,6 +41,28 @@ Writer's block is real, and sometimes you need external inspiration to get the c
 
 Rather than browsing random prompt websites or books, get personalized, AI-generated prompts delivered right in your writing environment.
 
+## Perfect Plugin Combination
+
+This plugin works exceptionally well with other freewriting tools to create a complete writing workflow:
+
+### ✍️ [Freewriting Cleanup](https://github.com/AlexKucera/freewriting-cleanup)
+Transform your messy freewriting into polished prose using AI. Perfect companion to this plugin:
+1. **Generate inspiration** with creative prompts from this plugin
+2. **Write freely** without worrying about mistakes
+3. **Clean up the output** with Freewriting Cleanup to polish your raw writing
+
+### 📝 [Digital Paper](https://github.com/danferns/digital-paper-obsidian-plugin)
+Write without the ability to delete or edit - just like pen on paper. Perfect for true freewriting sessions:
+1. **Enable Digital Paper mode** to disable all delete functions (backspace, delete key, Ctrl+X)
+2. **Use this plugin** to generate writing prompts for inspiration
+3. **Write continuously** without stopping to edit or second-guess yourself
+4. **Clean up afterwards** using Freewriting Cleanup to polish the unedited output
+
+**Recommended Workflow:**
+- Generate prompts with this plugin when you need inspiration
+- Enable Digital Paper mode for uninterrupted freewriting sessions
+- Use Freewriting Cleanup to polish your raw, unedited writing into readable text
+
 ## Installation
 
 ### Method 1: Community Plugin Store (Recommended)
