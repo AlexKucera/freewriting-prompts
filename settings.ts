@@ -3,7 +3,7 @@
 
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import FreewritingPromptsPlugin from './main';
-import { FreewritingPromptsSettings, ANTHROPIC_MODELS } from './types';
+import { FreewritingPromptsSettings, ANTHROPIC_MODELS, AnthropicModel } from './types';
 
 export const DEFAULT_SETTINGS: FreewritingPromptsSettings = {
     apiKey: '',
@@ -69,7 +69,7 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                 dropdown
                     .setValue(this.plugin.settings.model)
                     .onChange(async (value) => {
-                        this.plugin.settings.model = value;
+                        this.plugin.settings.model = value as AnthropicModel;
                         await this.plugin.saveSettings();
                     });
             });
