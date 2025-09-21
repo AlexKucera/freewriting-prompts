@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2025-01-21
+
+### Added
+- Plugin combination recommendations for enhanced writing workflow
+
+### Changed
+- **Command Naming**: Renamed "Staggered Prompts" to "Timed Prompts" for better clarity
+  - Command now called "Show Timed Prompts" instead of "Show Staggered Prompts"
+  - Settings renamed from "Staggered Count" to "Timed Count"
+  - All user-facing text updated to reflect regular interval timing rather than staggered/irregular timing
+
+### Fixed
+- **Type Safety**: Improved TypeScript type safety throughout codebase
+  - Replaced `any` types with proper Obsidian API types (App, ButtonComponent)
+  - Added null safety for button text content
+  - Enhanced code quality and maintainability
+- **Settings UI**: Removed redundant "Settings" text from settings tab heading
+
 ## [1.1.0] - 2025-01-20
 
 ### Changed

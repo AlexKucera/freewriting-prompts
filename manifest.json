@@ -1,7 +1,7 @@
 {
 	"id": "freewriting-prompts",
 	"name": "Freewriting Prompts",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"minAppVersion": "1.9.12",
 	"description": "Generate AI-powered writing prompts for freewriting sessions using Anthropic's Claude.",
 	"author": "Alexander Kucera",

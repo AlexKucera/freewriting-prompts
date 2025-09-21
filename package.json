@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-freewriting-prompts",
-	"version": "1.0.0",
+	"version": "1.1.1",
 	"description": "Generate AI-powered writing prompts for freewriting sessions using Anthropic's Claude.",
 	"main": "main.js",
 	"scripts": {
