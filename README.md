@@ -2,7 +2,7 @@
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/AlexKucera/freewriting-prompts?color=blue)](https://github.com/AlexKucera/freewriting-prompts/releases)
 [![License: MIT](https://img.shields.io/github/license/AlexKucera/freewriting-prompts?color=yellow)](https://opensource.org/licenses/MIT)
-[![Obsidian Downloads](https://img.shields.io/github/downloads/AlexKucera/freewriting-prompts/total?color=green)](https://obsidian.md/plugins?id=freewriting-prompts)
+[![Downloads](https://img.shields.io/github/downloads/AlexKucera/freewriting-prompts/total?color=green)](hhttps://github.com/AlexKucera/freewriting-prompts/releases)
 ![](https://img.shields.io/badge/mobile_supported-green?label=obsidian&labelColor=purple)
 
 Generate AI-powered writing prompts for freewriting sessions using Anthropic's Claude. Break through writer's block with creative, thought-provoking prompts delivered exactly when you need them.
