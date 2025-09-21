@@ -1,7 +1,7 @@
 // ABOUTME: Note prompts command implementation that appends prompts to the current note
 // ABOUTME: Handles editor interaction, cursor positioning, and prompt formatting
 
-import { Editor, MarkdownView, Notice } from 'obsidian';
+import { App, Editor, MarkdownView, Notice } from 'obsidian';
 import { PromptGeneratorService } from '../services/promptGenerator';
 import { FreewritingPromptsSettings } from '../types';
 
@@ -107,7 +107,7 @@ export class NotePromptsCommand {
         return !!(editor && view && view.file);
     }
 
-    static getExecutionContext(app: any): { editor: Editor | null; view: MarkdownView | null } {
+    static getExecutionContext(app: App): { editor: Editor | null; view: MarkdownView | null } {
         const activeView = app.workspace.getActiveViewOfType(MarkdownView);
 
         if (!activeView) {

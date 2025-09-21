@@ -1,7 +1,7 @@
 // ABOUTME: Settings interface and SettingTab implementation for the Freewriting Prompts plugin
 // ABOUTME: Handles user configuration including API key, model selection, and prompt customization
 
-import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { App, ButtonComponent, Notice, PluginSettingTab, Setting } from 'obsidian';
 import FreewritingPromptsPlugin from './main';
 import { FreewritingPromptsSettings, ANTHROPIC_MODELS, AnthropicModel } from './types';
 
@@ -28,7 +28,7 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: 'Freewriting Prompts Settings' });
+        containerEl.createEl('h2', { text: 'Freewriting Prompts' });
 
         // MARK: - API Configuration
 
@@ -185,8 +185,8 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
 
     // MARK: - API Testing
 
-    private async testApiKey(button: any): Promise<void> {
-        const originalText = button.buttonEl.textContent;
+    private async testApiKey(button: ButtonComponent): Promise<void> {
+        const originalText = button.buttonEl.textContent || 'Test Connection';
 
         // Update button to show loading state
         button.setButtonText('Testing...');
