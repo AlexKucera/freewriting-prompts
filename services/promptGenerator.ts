@@ -21,13 +21,13 @@ export class PromptGeneratorService {
 
     // MARK: - Public Methods
 
-    async generateStaggeredPrompts(settings: FreewritingPromptsSettings): Promise<string[]> {
+    async generateTimedPrompts(settings: FreewritingPromptsSettings): Promise<string[]> {
         return this.generatePrompts(
-            settings.staggeredCount,
+            settings.timedCount,
             settings.model,
             settings.systemPrompt,
-            settings.staggeredExamplePrompt,
-            'staggered'
+            settings.timedExamplePrompt,
+            'timed'
         );
     }
 
@@ -57,7 +57,7 @@ export class PromptGeneratorService {
         model: AnthropicModel,
         systemPrompt: string,
         examplePrompt: string,
-        type: 'staggered' | 'note'
+        type: 'timed' | 'note'
     ): Promise<string[]> {
         if (!this.client.validateApiKey()) {
             new Notice('Please configure your Anthropic API key in settings');
@@ -138,8 +138,8 @@ export class PromptGeneratorService {
             errors.push('API key is required');
         }
 
-        if (settings.staggeredCount < 1 || settings.staggeredCount > 50) {
-            errors.push('Staggered count must be between 1 and 50');
+        if (settings.timedCount < 1 || settings.timedCount > 50) {
+            errors.push('Timed count must be between 1 and 50');
         }
 
         if (settings.delaySeconds < 1 || settings.delaySeconds > 300) {

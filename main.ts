@@ -5,13 +5,13 @@ import { Editor, MarkdownView, Notice, Plugin } from 'obsidian';
 import { FreewritingPromptsSettings } from './types';
 import { DEFAULT_SETTINGS, FreewritingPromptsSettingTab } from './settings';
 import { PromptGeneratorService } from './services/promptGenerator';
-import { StaggeredPromptsCommand } from './commands/staggeredPrompts';
+import { TimedPromptsCommand } from './commands/timedPrompts';
 import { NotePromptsCommand } from './commands/notePrompts';
 
 export default class FreewritingPromptsPlugin extends Plugin {
     settings: FreewritingPromptsSettings;
     promptGenerator: PromptGeneratorService;
-    staggeredCommand: StaggeredPromptsCommand;
+    timedCommand: TimedPromptsCommand;
     noteCommand: NotePromptsCommand;
 
     async onload() {
@@ -19,7 +19,7 @@ export default class FreewritingPromptsPlugin extends Plugin {
 
         // Initialize services
         this.promptGenerator = new PromptGeneratorService(this.settings);
-        this.staggeredCommand = new StaggeredPromptsCommand(this.promptGenerator);
+        this.timedCommand = new TimedPromptsCommand(this.promptGenerator);
         this.noteCommand = new NotePromptsCommand(this.promptGenerator);
 
         // Register commands
@@ -30,9 +30,9 @@ export default class FreewritingPromptsPlugin extends Plugin {
     }
 
     onunload() {
-        // Stop any running staggered prompts
-        if (this.staggeredCommand) {
-            this.staggeredCommand.stop();
+        // Stop any running timed prompts
+        if (this.timedCommand) {
+            this.timedCommand.stop();
         }
 
         // Clear prompt cache
@@ -59,12 +59,12 @@ export default class FreewritingPromptsPlugin extends Plugin {
     // MARK: - Command Registration
 
     private registerCommands() {
-        // Staggered prompts command
+        // Timed prompts command
         this.addCommand({
-            id: 'staggered-prompts',
-            name: 'Show Staggered Prompts',
+            id: 'timed-prompts',
+            name: 'Show Timed Prompts',
             callback: async () => {
-                await this.executeStaggeredPrompts();
+                await this.executeTimedPrompts();
             }
         });
 
@@ -77,22 +77,22 @@ export default class FreewritingPromptsPlugin extends Plugin {
             }
         });
 
-        // Stop staggered prompts command
+        // Stop timed prompts command
         this.addCommand({
-            id: 'stop-staggered-prompts',
-            name: 'Stop Staggered Prompts',
+            id: 'stop-timed-prompts',
+            name: 'Stop Timed Prompts',
             callback: () => {
-                this.stopStaggeredPrompts();
+                this.stopTimedPrompts();
             }
         });
     }
 
     // MARK: - Command Implementations
 
-    private async executeStaggeredPrompts(): Promise<void> {
-        // Check if staggered prompts are already running
-        if (this.staggeredCommand.isRunning()) {
-            new Notice('Staggered prompts are already running. Use "Stop Staggered Prompts" to stop them first.');
+    private async executeTimedPrompts(): Promise<void> {
+        // Check if timed prompts are already running
+        if (this.timedCommand.isRunning()) {
+            new Notice('Timed prompts are already running. Use "Stop Timed Prompts" to stop them first.');
             return;
         }
 
@@ -104,9 +104,9 @@ export default class FreewritingPromptsPlugin extends Plugin {
         }
 
         try {
-            await this.staggeredCommand.execute(this.settings);
+            await this.timedCommand.execute(this.settings);
         } catch (error) {
-            console.error('Error executing staggered prompts:', error);
+            console.error('Error executing timed prompts:', error);
             // Error handling is done in the command layer
         }
     }
@@ -133,18 +133,18 @@ export default class FreewritingPromptsPlugin extends Plugin {
         }
     }
 
-    private stopStaggeredPrompts(): void {
-        if (this.staggeredCommand.isRunning()) {
-            this.staggeredCommand.stop();
-            new Notice('Staggered prompts stopped');
+    private stopTimedPrompts(): void {
+        if (this.timedCommand.isRunning()) {
+            this.timedCommand.stop();
+            new Notice('Timed prompts stopped');
         } else {
-            new Notice('No staggered prompts are currently running');
+            new Notice('No timed prompts are currently running');
         }
     }
 
     // MARK: - Public API for Settings
 
-    getStaggeredStatus(): { isRunning: boolean; currentPrompt: number; totalPrompts: number } {
-        return this.staggeredCommand.getStatus();
+    getTimedStatus(): { isRunning: boolean; currentPrompt: number; totalPrompts: number } {
+        return this.timedCommand.getStatus();
     }
 }

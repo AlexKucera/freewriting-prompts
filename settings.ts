@@ -8,11 +8,11 @@ import { FreewritingPromptsSettings, ANTHROPIC_MODELS, AnthropicModel } from './
 export const DEFAULT_SETTINGS: FreewritingPromptsSettings = {
     apiKey: '',
     model: 'claude-3-5-haiku-latest' as const,
-    staggeredCount: 10,
+    timedCount: 10,
     delaySeconds: 6,
     noteCount: 3,
     systemPrompt: 'You are a creative writing assistant. Generate engaging, thought-provoking writing prompts that inspire creativity and help writers overcome blocks. Focus on variety, originality, and emotional depth.',
-    staggeredExamplePrompt: 'The interesting thing about a rose is…',
+    timedExamplePrompt: 'The interesting thing about a rose is…',
     freewritingExamplePrompt: 'Describe a world where colors have been outlawed and only exist in secret underground galleries.'
 };
 
@@ -79,22 +79,22 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
         containerEl.createEl('h3', { text: 'Command Configuration' });
 
         new Setting(containerEl)
-            .setName('Staggered Prompts Count')
-            .setDesc('Number of prompts to generate for staggered notifications (1-50)')
+            .setName('Timed Prompts Count')
+            .setDesc('Number of prompts to generate for timed notifications (1-50)')
             .addText(text => text
                 .setPlaceholder('10')
-                .setValue(this.plugin.settings.staggeredCount.toString())
+                .setValue(this.plugin.settings.timedCount.toString())
                 .onChange(async (value) => {
                     const count = parseInt(value);
                     if (!isNaN(count) && count >= 1 && count <= 50) {
-                        this.plugin.settings.staggeredCount = count;
+                        this.plugin.settings.timedCount = count;
                         await this.plugin.saveSettings();
                     }
                 }));
 
         new Setting(containerEl)
             .setName('Delay Between Prompts')
-            .setDesc('Seconds to wait between each staggered prompt notification (1-300)')
+            .setDesc('Seconds to wait between each timed prompt notification (1-300)')
             .addText(text => text
                 .setPlaceholder('6')
                 .setValue(this.plugin.settings.delaySeconds.toString())
@@ -139,13 +139,13 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName('Staggered Prompts Example')
-            .setDesc('Example prompt to guide the style for staggered notifications')
+            .setName('Timed Prompts Example')
+            .setDesc('Example prompt to guide the style for timed notifications')
             .addTextArea(text => text
                 .setPlaceholder('Write about a character who...')
-                .setValue(this.plugin.settings.staggeredExamplePrompt)
+                .setValue(this.plugin.settings.timedExamplePrompt)
                 .onChange(async (value) => {
-                    this.plugin.settings.staggeredExamplePrompt = value;
+                    this.plugin.settings.timedExamplePrompt = value;
                     await this.plugin.saveSettings();
                 }))
             .then(setting => {

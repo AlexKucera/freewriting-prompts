@@ -21,7 +21,7 @@ Generate AI-powered writing prompts for freewriting sessions using Anthropic's C
 
 ## Key Features
 
-- **🎯 Two Prompt Modes**: Staggered notifications for timed writing sessions, or direct note insertion
+- **🎯 Two Prompt Modes**: Timed notifications for writing sessions, or direct note insertion
 - **🤖 AI-Powered**: Uses Anthropic's Claude models for creative, diverse prompt generation
 - **⚡ Customizable Timing**: Configure prompt count and delay intervals for your writing rhythm
 - **🎨 Personalized Prompts**: System prompts and examples to match your writing style
@@ -106,7 +106,7 @@ Write without the ability to delete or edit - just like pen on paper. Perfect fo
 ### 3. Start Using Prompts
 
 **For Timed Writing Sessions:**
-1. Use `Ctrl/Cmd + P` → "Staggered Freewriting Prompts"
+1. Use `Ctrl/Cmd + P` → "Show Timed Prompts"
 2. Prompts will appear as notifications at your configured intervals
 
 **For Note Integration:**
@@ -127,19 +127,19 @@ Write without the ability to delete or edit - just like pen on paper. Perfect fo
 
 | Setting | Description | Default | Range |
 |---------|-------------|---------|-------|
-| **Staggered Count** | Number of timed prompts | 10 | 1-50 |
+| **Timed Count** | Number of timed prompts | 10 | 1-50 |
 | **Delay Seconds** | Seconds between prompts | 6 | 1-300 |
 | **Note Count** | Prompts inserted in notes | 3 | 1-20 |
 
 ### Prompt Customization
 
 - **System Prompt**: Instructions for the AI on how to generate prompts
-- **Staggered Example**: Example prompt for timed sessions
+- **Timed Example**: Example prompt for timed sessions
 - **Freewriting Example**: Example prompt for note insertion
 
 ## Commands
 
-### Staggered Freewriting Prompts
+### Timed Freewriting Prompts
 
 Delivers prompts as timed notifications perfect for writing sprints:
 
@@ -169,9 +169,9 @@ Inserts prompts directly into your current note:
 - Creating prompt libraries
 - Inspiration gathering
 
-### Stop Staggered Prompts
+### Stop Timed Prompts
 
-Cancels any running staggered prompt sequence.
+Cancels any running timed prompt sequence.
 
 ## Settings
 
@@ -250,7 +250,7 @@ freewriting-prompts/
 ├── api/
 │   └── anthropicClient.ts    # Anthropic API integration
 ├── commands/
-│   ├── staggeredPrompts.ts   # Timed notification prompts
+│   ├── timedPrompts.ts       # Timed notification prompts
 │   └── notePrompts.ts        # Note insertion prompts
 ├── services/
 │   └── promptGenerator.ts    # Prompt generation service

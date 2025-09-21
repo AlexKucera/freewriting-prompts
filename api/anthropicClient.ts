@@ -9,7 +9,7 @@ export class AnthropicClient {
     private baseUrl = 'https://api.anthropic.com/v1/messages';
     private readonly SYSTEM_PROMPT_SUFFIX = '\n\nIMPORTANT OUTPUT REQUIREMENTS:\n- Return ONLY the numbered writing prompts, nothing else\n- Do not include any explanations, questions, or additional commentary\n- Do not ask if the user wants more prompts or different styles\n- Format: numbered list with one prompt per line (1. [prompt], 2. [prompt], etc.)';
 
-    private readonly STAGGERED_PROMPT_MODIFIER = '\n\nFOR STAGGERED PROMPTS - MAKE THEM EXTREMELY SHORT AND DIRECT:\n- Each prompt should be answerable in 1-5 words or a single sentence\n- Focus on immediate, concrete observations or quick thoughts\n- Avoid complex scenarios or deep philosophical questions\n- Examples: "What color is closest to you?", "Your favorite word today:", "First sound you hear:", "Describe your mood in one word", "Name something soft"\n- Keep prompts simple, immediate, and concrete';
+    private readonly TIMED_PROMPT_MODIFIER = '\n\nFOR TIMED PROMPTS - MAKE THEM EXTREMELY SHORT AND DIRECT:\n- Each prompt should be answerable in 1-5 words or a single sentence\n- Focus on immediate, concrete observations or quick thoughts\n- Avoid complex scenarios or deep philosophical questions\n- Examples: "What color is closest to you?", "Your favorite word today:", "First sound you hear:", "Describe your mood in one word", "Name something soft"\n- Keep prompts simple, immediate, and concrete';
 
     constructor(apiKey: string) {
         this.apiKey = apiKey;
@@ -22,7 +22,7 @@ export class AnthropicClient {
         model: AnthropicModel,
         systemPrompt: string,
         examplePrompt: string,
-        type: 'staggered' | 'note'
+        type: 'timed' | 'note'
     ): Promise<string[]> {
         if (!this.apiKey) {
             throw new Error('API key is required');
@@ -33,8 +33,8 @@ export class AnthropicClient {
 
             // Build system prompt with type-specific modifiers
             let finalSystemPrompt = systemPrompt;
-            if (type === 'staggered') {
-                finalSystemPrompt += this.STAGGERED_PROMPT_MODIFIER;
+            if (type === 'timed') {
+                finalSystemPrompt += this.TIMED_PROMPT_MODIFIER;
             }
             finalSystemPrompt += this.SYSTEM_PROMPT_SUFFIX;
 

@@ -1,11 +1,11 @@
-// ABOUTME: Staggered prompts command implementation that shows prompts as timed notifications
+// ABOUTME: Timed prompts command implementation that shows prompts as timed notifications
 // ABOUTME: Manages interval-based prompt display with proper cleanup and error handling
 
 import { Notice } from 'obsidian';
 import { PromptGeneratorService } from '../services/promptGenerator';
 import { FreewritingPromptsSettings } from '../types';
 
-export class StaggeredPromptsCommand {
+export class TimedPromptsCommand {
     private activeInterval: number | null = null;
     private promptQueue: string[] = [];
     private currentIndex = 0;
@@ -15,12 +15,12 @@ export class StaggeredPromptsCommand {
     // MARK: - Public Methods
 
     async execute(settings: FreewritingPromptsSettings): Promise<void> {
-        // Stop any existing staggered sequence
+        // Stop any existing timed sequence
         this.stop();
 
         try {
             // Generate prompts
-            const prompts = await this.promptGenerator.generateStaggeredPrompts(settings);
+            const prompts = await this.promptGenerator.generateTimedPrompts(settings);
 
             if (prompts.length === 0) {
                 new Notice('No prompts were generated');
@@ -40,7 +40,7 @@ export class StaggeredPromptsCommand {
             }
 
         } catch (error) {
-            console.error('Error executing staggered prompts command:', error);
+            console.error('Error executing timed prompts command:', error);
             // Error handling is done in the service layer
         }
     }

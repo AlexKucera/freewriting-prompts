@@ -4,11 +4,11 @@
 export interface FreewritingPromptsSettings {
     apiKey: string;
     model: AnthropicModel;
-    staggeredCount: number;
+    timedCount: number;
     delaySeconds: number;
     noteCount: number;
     systemPrompt: string;
-    staggeredExamplePrompt: string;
+    timedExamplePrompt: string;
     freewritingExamplePrompt: string;
 }
 

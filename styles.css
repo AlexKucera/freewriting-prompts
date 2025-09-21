@@ -2,7 +2,7 @@
 Freewriting Prompts Plugin Styles
 */
 
-/* Styling for staggered prompt notifications */
+/* Styling for timed prompt notifications */
 .freewriting-prompt-notice {
     max-width: 400px !important;
     white-space: pre-wrap !important;
