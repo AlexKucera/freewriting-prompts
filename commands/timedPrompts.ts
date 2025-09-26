@@ -9,15 +9,22 @@ export class TimedPromptsCommand {
     private activeInterval: number | null = null;
     private promptQueue: string[] = [];
     private currentIndex = 0;
+    private inProgress = false;
 
     constructor(private promptGenerator: PromptGeneratorService) {}
 
     // MARK: - Public Methods
 
     async execute(settings: FreewritingPromptsSettings): Promise<void> {
+        // Check if already in progress to prevent race conditions
+        if (this.inProgress) {
+            return;
+        }
+
         // Stop any existing timed sequence
         this.stop();
 
+        this.inProgress = true;
         try {
             // Generate prompts
             const prompts = await this.promptGenerator.generateTimedPrompts(settings);
@@ -42,6 +49,8 @@ export class TimedPromptsCommand {
         } catch (error) {
             console.error('Error executing timed prompts command:', error);
             // Error handling is done in the service layer
+        } finally {
+            this.inProgress = false;
         }
     }
 
@@ -52,6 +61,7 @@ export class TimedPromptsCommand {
         }
         this.promptQueue = [];
         this.currentIndex = 0;
+        this.inProgress = false;
     }
 
     isRunning(): boolean {
@@ -100,10 +110,13 @@ export class TimedPromptsCommand {
     // MARK: - Status Methods
 
     getStatus(): { isRunning: boolean; currentPrompt: number; totalPrompts: number } {
+        const totalPrompts = this.promptQueue.length;
+        const currentPrompt = totalPrompts === 0 ? 0 : Math.min(this.currentIndex + 1, totalPrompts);
+
         return {
             isRunning: this.isRunning(),
-            currentPrompt: this.currentIndex + 1,
-            totalPrompts: this.promptQueue.length
+            currentPrompt,
+            totalPrompts
         };
     }
 
