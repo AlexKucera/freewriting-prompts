@@ -2,7 +2,7 @@
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/AlexKucera/freewriting-prompts?color=blue)](https://github.com/AlexKucera/freewriting-prompts/releases)
 [![License: MIT](https://img.shields.io/github/license/AlexKucera/freewriting-prompts?color=yellow)](https://opensource.org/licenses/MIT)
-[![Downloads](https://img.shields.io/github/downloads/AlexKucera/freewriting-prompts/total?color=green)](hhttps://github.com/AlexKucera/freewriting-prompts/releases)
+[![Downloads](https://img.shields.io/github/downloads/AlexKucera/freewriting-prompts/total?color=green)](https://github.com/AlexKucera/freewriting-prompts/releases)
 [![CodeRabbit Reviews](https://img.shields.io/coderabbit/prs/github/AlexKucera/freewriting-prompts)](https://coderabbit.ai/)
 ![](https://img.shields.io/badge/mobile_supported-green?label=obsidian&labelColor=purple)
 
@@ -76,7 +76,7 @@ Write without the ability to delete or edit - just like pen on paper. Perfect fo
 
 ### Method 2: Manual Installation
 
-1. Go to [GitHub Releases](https://github.com/alexanderkucera/obsidian-freewriting-prompts/releases)
+1. Go to [GitHub Releases](https://github.com/AlexKucera/freewriting-prompts/releases)
 2. Download the latest `main.js`, `manifest.json`, and `styles.css`
 3. Create a folder `{VaultFolder}/.obsidian/plugins/freewriting-prompts/`
 4. Place the downloaded files in this folder
@@ -86,7 +86,7 @@ Write without the ability to delete or edit - just like pen on paper. Perfect fo
 ### Method 3: BRAT (Beta Reviewer's Auto-update Tool)
 
 1. Install the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat)
-2. Add this repository: `alexanderkucera/obsidian-freewriting-prompts`
+2. Add this repository: `https://github.com/AlexKucera/freewriting-prompts`
 3. Enable the plugin after installation
 
 ## Quick Start
