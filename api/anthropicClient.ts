@@ -50,7 +50,6 @@ export class AnthropicClient {
         } catch (error) {
             console.error('Error generating prompts:', error);
             if (error instanceof Error) {
-                new Notice(`Failed to generate prompts: ${error.message}`);
                 throw error;
             }
             throw new Error('Unknown error occurred while generating prompts');
