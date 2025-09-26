@@ -75,12 +75,7 @@ export class NotePromptsCommand {
         const newCursorLine = cursor.line + lines.length - 1;
         const newCursorCh = lines[lines.length - 1].length;
 
-        if (cursor.line === lastLine && !needsNewlineBefore) {
-            // If we were at the last line and didn't add a newline before, adjust
-            editor.setCursor(cursor.line, cursor.ch + contentToInsert.length);
-        } else {
-            editor.setCursor(newCursorLine, newCursorCh);
-        }
+        editor.setCursor(newCursorLine, newCursorCh);
     }
 
     private formatPrompts(prompts: string[]): string {
