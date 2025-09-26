@@ -118,6 +118,12 @@ export class PromptGeneratorService {
             return null;
         }
 
+        // Guard against empty cache arrays
+        if (cached.length === 0) {
+            this.cache.delete(cacheKey);
+            return null;
+        }
+
         const now = new Date().getTime();
         const cacheTime = cached[0].timestamp.getTime();
 
