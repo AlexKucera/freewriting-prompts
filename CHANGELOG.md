@@ -87,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input validation for all user settings
 - Rate limiting awareness with appropriate error handling
 
-[Unreleased]: https://github.com/alexanderkucera/obsidian-freewriting-prompts/compare/1.1.0...HEAD
-[1.1.0]: https://github.com/alexanderkucera/obsidian-freewriting-prompts/compare/1.0.0...1.1.0
-[1.0.0]: https://github.com/alexanderkucera/obsidian-freewriting-prompts/releases/tag/1.0.0
+[Unreleased]: https://github.com/AlexKucera/freewriting-prompts/compare/1.1.1...HEAD
+[1.1.1]: https://github.com/AlexKucera/freewriting-prompts/compare/1.1.0...1.1.1
+[1.1.0]: https://github.com/AlexKucera/freewriting-prompts/compare/1.0.0...1.1.0
+[1.0.0]: https://github.com/AlexKucera/freewriting-prompts/releases/tag/1.0.0
