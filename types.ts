@@ -3,13 +3,17 @@
 
 export interface FreewritingPromptsSettings {
     apiKey: string;
-    model: AnthropicModel;
+    model: string; // Changed from AnthropicModel to string to support dynamic models
     timedCount: number;
     delaySeconds: number;
     noteCount: number;
     systemPrompt: string;
     timedExamplePrompt: string;
     freewritingExamplePrompt: string;
+}
+
+export interface FreewritingPromptsData extends FreewritingPromptsSettings {
+    modelCache?: ModelCache;
 }
 
 export interface AnthropicMessage {
@@ -44,6 +48,25 @@ export interface AnthropicResponse {
 export interface GeneratedPrompt {
     text: string;
     timestamp: Date;
+}
+
+export interface ModelInfo {
+    id: string;
+    display_name?: string;
+    created_at: string;
+    type: string;
+}
+
+export interface ModelsListResponse {
+    data: ModelInfo[];
+    first_id: string;
+    has_more: boolean;
+    last_id: string;
+}
+
+export interface ModelCache {
+    models: ModelInfo[];
+    fetchedAt: number;
 }
 
 export const ANTHROPIC_MODELS = [

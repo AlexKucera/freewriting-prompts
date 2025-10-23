@@ -3,7 +3,7 @@
 
 import { Notice } from 'obsidian';
 import { AnthropicClient } from '../api/anthropicClient';
-import { FreewritingPromptsSettings, GeneratedPrompt, AnthropicModel } from '../types';
+import { FreewritingPromptsSettings, GeneratedPrompt } from '../types';
 
 export class PromptGeneratorService {
     private client: AnthropicClient;
@@ -54,7 +54,7 @@ export class PromptGeneratorService {
 
     private async generatePrompts(
         count: number,
-        model: AnthropicModel,
+        model: string,
         systemPrompt: string,
         examplePrompt: string,
         type: 'timed' | 'note'
@@ -97,7 +97,7 @@ export class PromptGeneratorService {
 
     private createCacheKey(
         count: number,
-        model: AnthropicModel,
+        model: string,
         systemPrompt: string,
         examplePrompt: string,
         type: string

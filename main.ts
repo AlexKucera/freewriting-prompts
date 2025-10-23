@@ -2,15 +2,17 @@
 // ABOUTME: Coordinates between services, commands, and Obsidian's plugin lifecycle
 
 import { Editor, MarkdownView, Notice, Plugin } from 'obsidian';
-import { FreewritingPromptsSettings } from './types';
+import { FreewritingPromptsSettings, FreewritingPromptsData } from './types';
 import { DEFAULT_SETTINGS, FreewritingPromptsSettingTab } from './settings';
 import { PromptGeneratorService } from './services/promptGenerator';
+import { ModelService } from './services/modelService';
 import { TimedPromptsCommand } from './commands/timedPrompts';
 import { NotePromptsCommand } from './commands/notePrompts';
 
 export default class FreewritingPromptsPlugin extends Plugin {
     settings: FreewritingPromptsSettings;
     promptGenerator: PromptGeneratorService;
+    modelService: ModelService;
     timedCommand: TimedPromptsCommand;
     noteCommand: NotePromptsCommand;
 
@@ -19,8 +21,15 @@ export default class FreewritingPromptsPlugin extends Plugin {
 
         // Initialize services
         this.promptGenerator = new PromptGeneratorService(this.settings);
+        this.modelService = new ModelService(this.promptGenerator.anthropicClient);
         this.timedCommand = new TimedPromptsCommand(this.promptGenerator);
         this.noteCommand = new NotePromptsCommand(this.promptGenerator);
+
+        // Load model cache
+        const data = await this.loadData() as FreewritingPromptsData | null;
+        if (data?.modelCache) {
+            this.modelService.loadCache(data.modelCache);
+        }
 
         // Register commands
         this.registerCommands();
@@ -48,7 +57,12 @@ export default class FreewritingPromptsPlugin extends Plugin {
     }
 
     async saveSettings() {
-        await this.saveData(this.settings);
+        // Save settings with model cache
+        const data: FreewritingPromptsData = {
+            ...this.settings,
+            modelCache: this.modelService?.getCache() || undefined
+        };
+        await this.saveData(data);
 
         // Update the prompt generator with new settings
         if (this.promptGenerator) {

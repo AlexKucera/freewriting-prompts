@@ -1,9 +1,10 @@
 // ABOUTME: Settings interface and SettingTab implementation for the Freewriting Prompts plugin
 // ABOUTME: Handles user configuration including API key, model selection, and prompt customization
 
-import { App, ButtonComponent, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { App, ButtonComponent, DropdownComponent, Notice, PluginSettingTab, Setting } from 'obsidian';
 import FreewritingPromptsPlugin from './main';
-import { FreewritingPromptsSettings, ANTHROPIC_MODELS, AnthropicModel } from './types';
+import { FreewritingPromptsSettings } from './types';
+import { ModelOption } from './services/modelService';
 
 export const DEFAULT_SETTINGS: FreewritingPromptsSettings = {
     apiKey: '',
@@ -18,17 +19,22 @@ export const DEFAULT_SETTINGS: FreewritingPromptsSettings = {
 
 export class FreewritingPromptsSettingTab extends PluginSettingTab {
     plugin: FreewritingPromptsPlugin;
+    private modelDropdown: DropdownComponent | null = null;
+    private availableModels: ModelOption[] = [];
 
     constructor(app: App, plugin: FreewritingPromptsPlugin) {
         super(app, plugin);
         this.plugin = plugin;
     }
 
-    display(): void {
+    async display(): Promise<void> {
         const { containerEl } = this;
         containerEl.empty();
 
         containerEl.createEl('h2', { text: 'Freewriting Prompts' });
+
+        // Load models asynchronously
+        await this.loadModels();
 
         // MARK: - API Configuration
 
@@ -44,6 +50,11 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                     this.plugin.settings.apiKey = value;
                     await this.plugin.saveSettings();
                     this.plugin.promptGenerator.updateApiKey(value);
+
+                    // Trigger model refresh when API key is entered
+                    if (value.trim().length > 0) {
+                        await this.refreshModels();
+                    }
                 }))
             .then(setting => {
                 // Make it a password field
@@ -63,13 +74,12 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             .setName('Claude Model')
             .setDesc('Which Claude model to use for generating prompts')
             .addDropdown(dropdown => {
-                ANTHROPIC_MODELS.forEach(model => {
-                    dropdown.addOption(model, model);
-                });
+                this.modelDropdown = dropdown;
+                this.populateModelDropdown(dropdown);
                 dropdown
                     .setValue(this.plugin.settings.model)
                     .onChange(async (value) => {
-                        this.plugin.settings.model = value as AnthropicModel;
+                        this.plugin.settings.model = value;
                         await this.plugin.saveSettings();
                     });
             });
@@ -181,6 +191,69 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                     const notice = new Notice('Cache cleared');
                     setTimeout(() => notice.hide(), 2000);
                 }));
+    }
+
+    // MARK: - Model Loading
+
+    private async loadModels(): Promise<void> {
+        try {
+            this.availableModels = await this.plugin.modelService.getAvailableModels();
+        } catch (error) {
+            console.error('Error loading models:', error);
+            // Error already shown by ModelService via Notice
+            // availableModels will be empty array, dropdown will be disabled
+        }
+    }
+
+    private populateModelDropdown(dropdown: DropdownComponent): void {
+        if (this.availableModels.length === 0) {
+            // No models available yet, disable dropdown
+            dropdown.addOption('', 'Loading models...');
+            dropdown.setDisabled(true);
+            return;
+        }
+
+        // Clear existing options
+        dropdown.selectEl.empty();
+
+        // Add all available models
+        this.availableModels.forEach(model => {
+            dropdown.addOption(model.id, model.displayName);
+        });
+
+        dropdown.setDisabled(false);
+    }
+
+    private async refreshModels(): Promise<void> {
+        try {
+            // Disable dropdown during refresh
+            if (this.modelDropdown) {
+                this.modelDropdown.setDisabled(true);
+                this.modelDropdown.selectEl.empty();
+                this.modelDropdown.addOption('', 'Refreshing models...');
+            }
+
+            // Fetch new models
+            this.availableModels = await this.plugin.modelService.refreshModels();
+
+            // Update dropdown
+            if (this.modelDropdown) {
+                this.populateModelDropdown(this.modelDropdown);
+
+                // Restore selected model if it still exists
+                const currentModel = this.plugin.settings.model;
+                const modelExists = this.availableModels.some(m => m.id === currentModel);
+                if (modelExists) {
+                    this.modelDropdown.setValue(currentModel);
+                }
+            }
+
+            // Save updated cache
+            await this.plugin.saveSettings();
+        } catch (error) {
+            console.error('Error refreshing models:', error);
+            // Error already shown by ModelService via Notice
+        }
     }
 
     // MARK: - API Testing
