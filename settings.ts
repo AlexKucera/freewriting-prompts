@@ -58,8 +58,12 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
     private availableModels: ModelOption[] = [];
     /** Debounce timer for API key changes to avoid excessive API calls */
     private apiKeyDebounceTimer: number | null = null;
+    /** Debounce timer for settings saves to reduce disk writes */
+    private settingsSaveTimer: number | null = null;
     /** Debounce delay in milliseconds */
     private readonly API_KEY_DEBOUNCE_MS = 500;
+    /** Debounce delay for settings saves in milliseconds */
+    private readonly SETTINGS_SAVE_DEBOUNCE_MS = 500;
 
     /**
      * Creates a new settings tab instance.
@@ -81,6 +85,24 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             window.clearTimeout(this.apiKeyDebounceTimer);
             this.apiKeyDebounceTimer = null;
         }
+        if (this.settingsSaveTimer !== null) {
+            window.clearTimeout(this.settingsSaveTimer);
+            this.settingsSaveTimer = null;
+        }
+    }
+
+    /**
+     * Debounces settings saves to reduce disk writes on rapid changes.
+     * Clears any pending save and schedules a new one after the debounce delay.
+     */
+    private debounceSaveSettings(): void {
+        if (this.settingsSaveTimer !== null) {
+            window.clearTimeout(this.settingsSaveTimer);
+        }
+        this.settingsSaveTimer = window.setTimeout(() => {
+            void this.plugin.saveSettings();
+            this.settingsSaveTimer = null;
+        }, this.SETTINGS_SAVE_DEBOUNCE_MS);
     }
 
     /**
@@ -90,7 +112,7 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
      * of model data without blocking the UI. The model dropdown starts with
      * a "Loading models..." placeholder and updates when data arrives.
      */
-    async display(): Promise<void> {
+    display(): void {
         const { containerEl } = this;
         containerEl.empty();
 
@@ -106,11 +128,8 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             .addText(text => text
                 .setPlaceholder('sk-ant-...')
                 .setValue(this.plugin.settings.apiKey)
-                .onChange(async (value) => {
+                .onChange((value) => {
                     this.plugin.settings.apiKey = value;
-                    await this.plugin.saveSettings();
-                    // Note: updateApiKey is called by saveSettings only if key changed
-                    // This avoids clearing the prompt cache twice
 
                     // Clear any existing debounce timer
                     if (this.apiKeyDebounceTimer !== null) {
@@ -118,13 +137,20 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                         this.apiKeyDebounceTimer = null;
                     }
 
-                    // Debounce model refresh to avoid excessive API calls on every keystroke
-                    if (value.trim().length > 0) {
-                        this.apiKeyDebounceTimer = window.setTimeout(async () => {
-                            await this.refreshModels();
+                    // Debounce both saving and model refresh to reduce disk writes and API calls
+                    this.apiKeyDebounceTimer = window.setTimeout(() => {
+                        void (async () => {
+                            await this.plugin.saveSettings();
+                            // Note: updateApiKey is called by saveSettings only if key changed
+                            // This avoids clearing the prompt cache twice
+
+                            // Refresh models if API key has content
+                            if (value.trim().length > 0) {
+                                await this.refreshModels();
+                            }
                             this.apiKeyDebounceTimer = null;
-                        }, this.API_KEY_DEBOUNCE_MS);
-                    }
+                        })();
+                    }, this.API_KEY_DEBOUNCE_MS);
                 }))
             .then(setting => {
                 // Make it a password field
@@ -136,8 +162,8 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             .setDesc('Test your API key to verify it works correctly')
             .addButton(button => button
                 .setButtonText('Test Connection')
-                .onClick(async () => {
-                    await this.testApiKey(button);
+                .onClick(() => {
+                    void this.testApiKey(button);
                 }));
 
         new Setting(containerEl)
@@ -146,16 +172,18 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             .addDropdown(dropdown => {
                 this.modelDropdown = dropdown;
                 this.populateModelDropdown(dropdown);
-                dropdown
-                    .setValue(this.plugin.settings.model)
-                    .onChange(async (value) => {
-                        this.plugin.settings.model = value;
-                        await this.plugin.saveSettings();
-                    });
+                // Only set value if models are loaded to avoid setting non-existent options
+                if (this.availableModels.length > 0) {
+                    dropdown.setValue(this.plugin.settings.model);
+                }
+                dropdown.onChange(async (value) => {
+                    this.plugin.settings.model = value;
+                    await this.plugin.saveSettings();
+                });
             });
 
         // Load models asynchronously without blocking UI
-        this.loadModelsAsync();
+        void this.loadModelsAsync();
 
         // MARK: - Command Configuration
 
@@ -213,9 +241,9 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             .addTextArea(text => text
                 .setPlaceholder('You are a creative writing assistant...')
                 .setValue(this.plugin.settings.systemPrompt)
-                .onChange(async (value) => {
+                .onChange((value) => {
                     this.plugin.settings.systemPrompt = value;
-                    await this.plugin.saveSettings();
+                    this.debounceSaveSettings();
                 }))
             .then(setting => {
                 setting.controlEl.querySelector('textarea')?.setAttribute('rows', '3');
@@ -227,9 +255,9 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             .addTextArea(text => text
                 .setPlaceholder('Write about a character who...')
                 .setValue(this.plugin.settings.timedExamplePrompt)
-                .onChange(async (value) => {
+                .onChange((value) => {
                     this.plugin.settings.timedExamplePrompt = value;
-                    await this.plugin.saveSettings();
+                    this.debounceSaveSettings();
                 }))
             .then(setting => {
                 setting.controlEl.querySelector('textarea')?.setAttribute('rows', '2');
@@ -241,9 +269,9 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             .addTextArea(text => text
                 .setPlaceholder('Describe a world where...')
                 .setValue(this.plugin.settings.freewritingExamplePrompt)
-                .onChange(async (value) => {
+                .onChange((value) => {
                     this.plugin.settings.freewritingExamplePrompt = value;
-                    await this.plugin.saveSettings();
+                    this.debounceSaveSettings();
                 }))
             .then(setting => {
                 setting.controlEl.querySelector('textarea')?.setAttribute('rows', '2');
