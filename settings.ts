@@ -33,9 +33,6 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
 
         containerEl.createEl('h2', { text: 'Freewriting Prompts' });
 
-        // Load models asynchronously
-        await this.loadModels();
-
         // MARK: - API Configuration
 
         containerEl.createEl('h3', { text: 'API Configuration' });
@@ -83,6 +80,9 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     });
             });
+
+        // Load models asynchronously without blocking UI
+        this.loadModelsAsync();
 
         // MARK: - Command Configuration
 
@@ -202,6 +202,34 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             console.error('Error loading models:', error);
             // Error already shown by ModelService via Notice
             // availableModels will be empty array, dropdown will be disabled
+        }
+    }
+
+    /**
+     * Load models asynchronously without blocking UI rendering
+     * Updates dropdown when models are fetched
+     */
+    private async loadModelsAsync(): Promise<void> {
+        await this.loadModels();
+
+        // Update dropdown after models are loaded
+        if (this.modelDropdown) {
+            this.populateModelDropdown(this.modelDropdown);
+
+            // Restore selected model if it still exists
+            const currentModel = this.plugin.settings.model;
+            const modelExists = this.availableModels.some(m => m.id === currentModel);
+            if (modelExists) {
+                this.modelDropdown.setValue(currentModel);
+            } else {
+                // Fall back to first available model if current one is gone
+                const fallbackModel = this.availableModels[0];
+                if (fallbackModel) {
+                    this.modelDropdown.setValue(fallbackModel.id);
+                    this.plugin.settings.model = fallbackModel.id;
+                    await this.plugin.saveSettings();
+                }
+            }
         }
     }
 
