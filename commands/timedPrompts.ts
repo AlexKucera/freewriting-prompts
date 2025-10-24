@@ -21,11 +21,13 @@ export class TimedPromptsCommand {
             new Notice('Timed prompts are already being generated. Please wait.');
             return;
         }
+        
+        this.inProgress = true;
 
         // Stop any existing timed sequence
         this.stop();
 
-        this.inProgress = true;
+        
         try {
             // Generate prompts
             const prompts = await this.promptGenerator.generateTimedPrompts(settings);
