@@ -32,6 +32,11 @@ export class ModelService {
             return this.formatModels(this.modelCache.models);
         }
 
+        // If no API key, quietly return fallback
+        if (!this.anthropicClient.validateApiKey()) {
+            return this.getFallbackModels();
+        }
+
         // Try to fetch from API
         try {
             const response = await this.anthropicClient.fetchModels();
@@ -49,6 +54,11 @@ export class ModelService {
      * Used when user changes API key
      */
     async refreshModels(): Promise<ModelOption[]> {
+        // If no API key, quietly return fallback
+        if (!this.anthropicClient.validateApiKey()) {
+            return this.getFallbackModels();
+        }
+
         try {
             const response = await this.anthropicClient.fetchModels();
             this.updateCache(response.data);
@@ -114,7 +124,7 @@ export class ModelService {
         return models.map(model => ({
             id: model.id,
             displayName: model.display_name || model.id
-        }));
+        })).sort((a, b) => a.displayName.localeCompare(b.displayName));
     }
 
     /**
@@ -124,6 +134,6 @@ export class ModelService {
         return ANTHROPIC_MODELS.map(id => ({
             id,
             displayName: id
-        }));
+        })).sort((a, b) => a.displayName.localeCompare(b.displayName));
     }
 }
