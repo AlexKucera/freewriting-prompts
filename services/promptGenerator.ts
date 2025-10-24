@@ -100,7 +100,7 @@ export class PromptGeneratorService {
         model: string,
         systemPrompt: string,
         examplePrompt: string,
-        type: string
+        type: 'timed' | 'note'
     ): string {
         const keyData = {
             count,

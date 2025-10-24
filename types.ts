@@ -1,9 +1,12 @@
 // ABOUTME: Type definitions for the Freewriting Prompts plugin
 // ABOUTME: Defines interfaces for settings, API responses, and plugin configuration
 
+// Type alias to document intent that this should be a Claude model ID
+export type ModelId = string;
+
 export interface FreewritingPromptsSettings {
     apiKey: string;
-    model: string; // Changed from AnthropicModel to string to support dynamic models
+    model: ModelId; // Changed from AnthropicModel to string to support dynamic models
     timedCount: number;
     delaySeconds: number;
     noteCount: number;
