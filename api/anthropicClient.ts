@@ -136,9 +136,17 @@ export class AnthropicClient {
             }
 
             // Validate basic response structure
-            const data = response.json as any;
-            if (!data || !Array.isArray(data.data)) {
+            const data = response.json as unknown;
+            if (!data || typeof data !== 'object' || !('data' in data) || !Array.isArray((data as { data: unknown }).data)) {
                 throw new Error('Invalid models API response structure');
+            }
+
+            // Validate that each model has required fields
+            const modelsData = (data as { data: unknown[] }).data;
+            if (!modelsData.every((model: unknown) =>
+                model && typeof model === 'object' && 'id' in model && typeof (model as { id: unknown }).id === 'string'
+            )) {
+                throw new Error('Invalid model structure in API response');
             }
 
             return data as ModelsListResponse;
