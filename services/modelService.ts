@@ -39,7 +39,7 @@ export class ModelService {
             return this.formatModels(response.data);
         } catch (error) {
             console.error('Failed to fetch models from API:', error);
-            new Notice('Fetching current models failed. Using hardcoded fallback list.');
+            new Notice('Could not fetch latest models from API. Using default model list.');
             return this.getFallbackModels();
         }
     }
