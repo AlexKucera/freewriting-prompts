@@ -17,7 +17,9 @@ export default class FreewritingPromptsPlugin extends Plugin {
     noteCommand: NotePromptsCommand;
 
     async onload() {
-        await this.loadSettings();
+        // Load data once and use it for both settings and model cache
+        const data = await this.loadData() as FreewritingPromptsData | null;
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 
         // Initialize services
         this.promptGenerator = new PromptGeneratorService(this.settings);
@@ -26,7 +28,6 @@ export default class FreewritingPromptsPlugin extends Plugin {
         this.noteCommand = new NotePromptsCommand(this.promptGenerator);
 
         // Load model cache
-        const data = await this.loadData() as FreewritingPromptsData | null;
         if (data?.modelCache) {
             this.modelService.loadCache(data.modelCache);
         }
