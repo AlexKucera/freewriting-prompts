@@ -2,7 +2,7 @@
 // ABOUTME: Coordinates between services, commands, and Obsidian's plugin lifecycle
 
 import { Editor, MarkdownView, Notice, Plugin } from 'obsidian';
-import { FreewritingPromptsSettings, FreewritingPromptsData } from './types';
+import { FreewritingPromptsSettings, FreewritingPromptsData, ModelCache } from './types';
 import { DEFAULT_SETTINGS, FreewritingPromptsSettingTab } from './settings';
 import { PromptGeneratorService } from './services/promptGenerator';
 import { ModelService } from './services/modelService';
@@ -50,11 +50,25 @@ export default class FreewritingPromptsPlugin extends Plugin {
      */
     async onload() {
         // Load data once and use it for both settings and model cache
-        const data = await this.loadData() as FreewritingPromptsData | null;
-
-        // Destructure to prevent modelCache from being merged into settings (type drift)
-        const { modelCache, ...savedSettings } = data ?? {};
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
+        // Guard against corrupted persisted data to prevent plugin load failure
+        let modelCache: ModelCache | undefined;
+        try {
+            const data = await this.loadData() as FreewritingPromptsData | null;
+            if (data) {
+                // Destructure to prevent modelCache from being merged into settings (type drift)
+                const { modelCache: cache, ...savedSettings } = data;
+                modelCache = cache;
+                this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
+            } else {
+                // No data loaded, use defaults
+                this.settings = { ...DEFAULT_SETTINGS };
+                modelCache = undefined;
+            }
+        } catch (error) {
+            console.error('Failed to load settings; using defaults.', error);
+            this.settings = { ...DEFAULT_SETTINGS };
+            modelCache = undefined;
+        }
 
         // Track initial API key to detect changes on save
         this.lastApiKey = this.settings.apiKey;
