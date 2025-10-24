@@ -109,7 +109,8 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.apiKey = value;
                     await this.plugin.saveSettings();
-                    this.plugin.promptGenerator.updateApiKey(value);
+                    // Note: updateApiKey is called by saveSettings only if key changed
+                    // This avoids clearing the prompt cache twice
 
                     // Clear any existing debounce timer
                     if (this.apiKeyDebounceTimer !== null) {
@@ -309,10 +310,11 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             } else {
                 // Fall back to first available model if current one is gone
                 const fallbackModel = this.availableModels[0];
-                if (fallbackModel) {
+                if (fallbackModel && this.plugin.settings.model !== fallbackModel.id) {
                     this.modelDropdown.setValue(fallbackModel.id);
                     this.plugin.settings.model = fallbackModel.id;
                     await this.plugin.saveSettings();
+                    new Notice(`Your selected model is no longer available. Defaulting to ${fallbackModel.displayName} (${fallbackModel.id})`);
                 }
             }
         }
@@ -380,16 +382,15 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                 } else {
                     // Fall back to first available model if current one is gone
                     const fallbackModel = this.availableModels[0];
-                    if (fallbackModel) {
+                    if (fallbackModel && this.plugin.settings.model !== fallbackModel.id) {
                         this.modelDropdown.setValue(fallbackModel.id);
                         this.plugin.settings.model = fallbackModel.id;
-                        new Notice('Your selected model is no longer available. Defaulting to ' + fallbackModel.displayName);
+                        new Notice(`Your selected model is no longer available. Defaulting to ${fallbackModel.displayName} (${fallbackModel.id})`);
+                        // Save only if model actually changed
+                        await this.plugin.saveSettings();
                     }
                 }
             }
-
-            // Persist any selection changes
-            await this.plugin.saveSettings();
         } catch (error) {
             console.error('Error refreshing models:', error);
             // Error already shown by ModelService via Notice
