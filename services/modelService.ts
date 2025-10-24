@@ -34,6 +34,8 @@ export class ModelService {
     private modelCache: ModelCache | null = null;
     /** Cache time-to-live in milliseconds (24 hours) */
     private readonly CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+    /** Track whether we've shown the fallback notice this session to avoid spam */
+    private hasShownFallbackNotice = false;
 
     /**
      * Creates a new model service instance.
@@ -74,10 +76,16 @@ export class ModelService {
         try {
             const response = await this.anthropicClient.fetchModels();
             this.updateCache(response.data);
+            // Reset notice flag on successful fetch
+            this.hasShownFallbackNotice = false;
             return this.formatModels(response.data);
         } catch (error) {
             console.error('Failed to fetch models from API:', error);
-            new Notice('Could not fetch latest models from API. Using default model list.');
+            // Only show notice once per session to avoid spamming during offline periods
+            if (!this.hasShownFallbackNotice) {
+                new Notice('Could not fetch latest models from API. Using default model list.');
+                this.hasShownFallbackNotice = true;
+            }
             return this.getFallbackModels();
         }
     }
@@ -100,10 +108,16 @@ export class ModelService {
         try {
             const response = await this.anthropicClient.fetchModels();
             this.updateCache(response.data);
+            // Reset notice flag on successful fetch
+            this.hasShownFallbackNotice = false;
             return this.formatModels(response.data);
         } catch (error) {
             console.error('Failed to refresh models from API:', error);
-            new Notice('Fetching current models failed. Using hardcoded fallback list.');
+            // Only show notice once per session to avoid spamming during repeated failures
+            if (!this.hasShownFallbackNotice) {
+                new Notice('Fetching current models failed. Using hardcoded fallback list.');
+                this.hasShownFallbackNotice = true;
+            }
             return this.getFallbackModels();
         }
     }
@@ -165,13 +179,21 @@ export class ModelService {
     /**
      * Updates the cache with freshly fetched model data.
      *
-     * Sets the fetchedAt timestamp to now, starting the 24-hour TTL countdown.
+     * Deduplicates models by ID to guard against accidental duplicates
+     * across pagination responses. Sets the fetchedAt timestamp to now,
+     * starting the 24-hour TTL countdown.
      *
      * @param models - Array of model information from the API
      */
     private updateCache(models: ModelInfo[]): void {
+        // Deduplicate by id using Map
+        const byId = new Map<string, ModelInfo>();
+        for (const model of models) {
+            byId.set(model.id, model);
+        }
+
         this.modelCache = {
-            models,
+            models: Array.from(byId.values()),
             fetchedAt: Date.now()
         };
     }
