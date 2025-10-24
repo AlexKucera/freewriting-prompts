@@ -245,6 +245,11 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                 const modelExists = this.availableModels.some(m => m.id === currentModel);
                 if (modelExists) {
                     this.modelDropdown.setValue(currentModel);
+                } else if (this.availableModels.length > 0) {
+                    // Fall back to first available model if current one is gone
+                    this.plugin.settings.model = this.availableModels[0].id;
+                    this.modelDropdown.setValue(this.availableModels[0].id);
+                    new Notice('Your selected model is no longer available. Defaulting to ' + this.availableModels[0].displayName);
                 }
             }
 
