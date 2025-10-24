@@ -56,6 +56,10 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
     private modelDropdown: DropdownComponent | null = null;
     /** Cached list of available models for the dropdown */
     private availableModels: ModelOption[] = [];
+    /** Debounce timer for API key changes to avoid excessive API calls */
+    private apiKeyDebounceTimer: number | null = null;
+    /** Debounce delay in milliseconds */
+    private readonly API_KEY_DEBOUNCE_MS = 500;
 
     /**
      * Creates a new settings tab instance.
@@ -66,6 +70,17 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
     constructor(app: App, plugin: FreewritingPromptsPlugin) {
         super(app, plugin);
         this.plugin = plugin;
+    }
+
+    /**
+     * Cleanup method to clear any pending timers.
+     * Called when settings tab is closed or destroyed.
+     */
+    hide(): void {
+        if (this.apiKeyDebounceTimer !== null) {
+            window.clearTimeout(this.apiKeyDebounceTimer);
+            this.apiKeyDebounceTimer = null;
+        }
     }
 
     /**
@@ -96,9 +111,18 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.promptGenerator.updateApiKey(value);
 
-                    // Trigger model refresh when API key is entered
+                    // Clear any existing debounce timer
+                    if (this.apiKeyDebounceTimer !== null) {
+                        window.clearTimeout(this.apiKeyDebounceTimer);
+                        this.apiKeyDebounceTimer = null;
+                    }
+
+                    // Debounce model refresh to avoid excessive API calls on every keystroke
                     if (value.trim().length > 0) {
-                        await this.refreshModels();
+                        this.apiKeyDebounceTimer = window.setTimeout(async () => {
+                            await this.refreshModels();
+                            this.apiKeyDebounceTimer = null;
+                        }, this.API_KEY_DEBOUNCE_MS);
                     }
                 }))
             .then(setting => {
