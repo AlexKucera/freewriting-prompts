@@ -130,19 +130,30 @@ export class AnthropicClient {
         try {
             // Accumulate all models across pages
             const allModels: ModelInfo[] = [];
+            // Track seen model IDs to filter duplicates
+            const seenIds = new Set<string>();
             let hasMore = true;
             let afterId: string | undefined = undefined;
             let firstId = '';
             let lastId = '';
+            // Loop safety: prevent runaway pagination
+            let iterations = 0;
+            const maxIterations = 1000;
 
-            // Fetch all pages
+            // Fetch all pages with safety guards
             while (hasMore) {
+                // Guard against infinite loops
+                iterations++;
+                if (iterations > maxIterations) {
+                    throw new Error(`Pagination exceeded maximum iterations (${maxIterations}). Possible API issue.`);
+                }
+
                 // Build URL with pagination parameters
                 // Use limit=1000 (Anthropic's max) to minimize round trips
                 const params = new URLSearchParams();
                 params.set('limit', '1000');
                 if (afterId) {
-                    params.set('after', afterId);
+                    params.set('after_id', afterId);
                 }
                 const url = `${this.modelsUrl}?${params.toString()}`;
 
@@ -175,8 +186,13 @@ export class AnthropicClient {
 
                 const pageResponse = data as ModelsListResponse;
 
-                // Accumulate models from this page
-                allModels.push(...pageResponse.data);
+                // Accumulate models from this page, filtering out duplicates
+                for (const model of pageResponse.data) {
+                    if (!seenIds.has(model.id)) {
+                        seenIds.add(model.id);
+                        allModels.push(model);
+                    }
+                }
 
                 // Store first_id from the first page
                 if (!firstId) {
@@ -184,8 +200,16 @@ export class AnthropicClient {
                 }
 
                 // Update pagination state
+                const previousAfterId: string | undefined = afterId;
                 lastId = pageResponse.last_id;
                 hasMore = pageResponse.has_more;
+
+                // Guard against cursor not advancing (would cause infinite loop)
+                if (!lastId || lastId === previousAfterId) {
+                    // Cursor didn't advance - break to prevent infinite loop
+                    console.warn('Pagination cursor did not advance. Stopping pagination.');
+                    break;
+                }
 
                 // Set up for next iteration
                 if (hasMore) {
