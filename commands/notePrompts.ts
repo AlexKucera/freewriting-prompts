@@ -146,7 +146,9 @@ export class NotePromptsCommand {
      * @returns Formatted markdown string ready for insertion
      */
     private formatPrompts(prompts: string[]): string {
-        const timestamp = new Intl.DateTimeFormat('en-US', {
+        // Use user's locale for timestamp formatting to respect regional preferences
+        const locale = navigator?.language ?? 'en-US';
+        const timestamp = new Intl.DateTimeFormat(locale, {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
