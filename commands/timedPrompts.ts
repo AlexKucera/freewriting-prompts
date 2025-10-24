@@ -51,8 +51,10 @@ export class TimedPromptsCommand {
      * 4. Shows the first prompt immediately
      * 5. Starts an interval to show remaining prompts
      *
-     * The inProgress flag prevents issues if the user triggers the command
-     * multiple times quickly while prompt generation is in progress.
+     * The inProgress flag prevents concurrent executions during async prompt
+     * generation. It's set to true before any async work begins and reset to
+     * false in the finally block after all work completes, ensuring reliable
+     * concurrency protection.
      *
      * @param settings - Current plugin settings for generation parameters
      */
@@ -62,10 +64,11 @@ export class TimedPromptsCommand {
             new Notice('Timed prompts are already being generated. Please wait.');
             return;
         }
-        
+
+        // Set flag BEFORE any async work to prevent concurrent execution
         this.inProgress = true;
 
-        // Stop any existing timed sequence
+        // Stop any existing timed sequence (does NOT reset inProgress)
         this.stop();
 
         
@@ -94,6 +97,8 @@ export class TimedPromptsCommand {
             console.error('Error executing timed prompts command:', error);
             // Error handling is done in the service layer
         } finally {
+            // Reset flag after all work completes (success or failure)
+            // This ensures the flag is always reset and prevents stuck state
             this.inProgress = false;
         }
     }
@@ -104,6 +109,9 @@ export class TimedPromptsCommand {
      * Cleans up the interval timer and resets all state. This is important
      * for preventing memory leaks and ensuring the next execution starts fresh.
      * Safe to call even when no sequence is running.
+     *
+     * Note: Does NOT reset inProgress flag - that's managed by execute() to
+     * prevent race conditions during async prompt generation.
      */
     stop(): void {
         if (this.activeInterval !== null) {
@@ -112,7 +120,7 @@ export class TimedPromptsCommand {
         }
         this.promptQueue = [];
         this.currentIndex = 0;
-        this.inProgress = false;
+        // inProgress is NOT reset here - only execute() manages this flag
     }
 
     /**
