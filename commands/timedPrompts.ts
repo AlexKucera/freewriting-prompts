@@ -169,8 +169,9 @@ export class TimedPromptsCommand {
             const totalPrompts = this.promptQueue.length;
 
             // Calculate notification duration: slightly less than delay to avoid overlap
-            // Subtract 500ms to allow for fade-out before next prompt appears
-            const notificationDuration = Math.max(1000, (delaySeconds * 1000) - 500);
+            // For very short delays (<=1s), cap at 500ms; otherwise end 500ms before next tick
+            const delayMs = delaySeconds * 1000;
+            const notificationDuration = delayMs > 1000 ? (delayMs - 500) : 500;
 
             const notice = new Notice(
                 `Writing Prompt ${promptNumber}/${totalPrompts}:\n\n${prompt}`,
