@@ -18,6 +18,7 @@ export class TimedPromptsCommand {
     async execute(settings: FreewritingPromptsSettings): Promise<void> {
         // Check if already in progress to prevent race conditions
         if (this.inProgress) {
+            new Notice('Timed prompts are already being generated. Please wait.');
             return;
         }
 
