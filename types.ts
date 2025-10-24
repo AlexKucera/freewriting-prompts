@@ -154,12 +154,22 @@ export interface ModelCache {
  * Hardcoded fallback list of known Claude models.
  * Used when the Models API is unavailable or the API key is not configured.
  * This list should be updated periodically as new models are released.
+ *
+ * Organized by family (newest to oldest):
+ * - Sonnet 4.5 (latest, released Sept 29, 2025)
+ * - Haiku 4.5 (released Oct 1, 2025)
+ * - Opus 4.1 (released Aug 5, 2025)
+ * - Legacy models (Sonnet 4, 3.7, Opus 4, Haiku 3.5, Haiku 3)
  */
 export const ANTHROPIC_MODELS = [
+    // Current Models (using -latest aliases for stability)
+    'claude-sonnet-4-5-20250929',
+    'claude-haiku-4-5-20251001',
     'claude-opus-4-1-20250805',
-    'claude-opus-4-20250514',
+    // Legacy Models
     'claude-sonnet-4-20250514',
     'claude-3-7-sonnet-latest',
+    'claude-opus-4-20250514',
     'claude-3-5-haiku-latest',
     'claude-3-haiku-20240307'
 ] as const;
