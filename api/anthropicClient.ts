@@ -79,7 +79,13 @@ export class AnthropicClient {
                 throw new Error(`Models API request failed: ${response.status}\n${response.text}`);
             }
 
-            return response.json as ModelsListResponse;
+            // Validate basic response structure
+            const data = response.json as any;
+            if (!data || !Array.isArray(data.data)) {
+                throw new Error('Invalid models API response structure');
+            }
+
+            return data as ModelsListResponse;
         } catch (error) {
             if (error instanceof Error) {
                 throw error;
