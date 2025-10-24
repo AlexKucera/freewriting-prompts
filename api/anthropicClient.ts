@@ -2,7 +2,7 @@
 // ABOUTME: Handles API requests, error handling, and response parsing
 
 import { requestUrl } from 'obsidian';
-import { AnthropicRequest, AnthropicResponse, ModelsListResponse } from '../types';
+import { AnthropicRequest, AnthropicResponse, ModelInfo, ModelsListResponse } from '../types';
 
 /**
  * Client for interacting with the Anthropic API to generate writing prompts.
@@ -109,11 +109,13 @@ export class AnthropicClient {
     /**
      * Fetches the list of available Claude models from the Anthropic API.
      *
-     * This is used to populate the model selection dropdown in settings with
-     * current available models rather than relying solely on hardcoded lists.
+     * This method implements pagination to ensure all available models are retrieved.
+     * It continues fetching pages while has_more is true, using the after parameter
+     * with the last_id from each response to request subsequent pages.
+     *
      * The response is cached by ModelService with a 24-hour TTL.
      *
-     * @returns Response containing array of available models with metadata
+     * @returns Response containing array of all available models with final pagination metadata
      * @throws Error if API key is missing, request fails, or response is malformed
      */
     async fetchModels(): Promise<ModelsListResponse> {
@@ -122,34 +124,72 @@ export class AnthropicClient {
         }
 
         try {
-            const response = await requestUrl({
-                url: this.modelsUrl,
-                method: 'GET',
-                headers: {
-                    'x-api-key': this.apiKey,
-                    'anthropic-version': '2023-06-01'
+            // Accumulate all models across pages
+            const allModels: ModelInfo[] = [];
+            let hasMore = true;
+            let afterId: string | undefined = undefined;
+            let firstId = '';
+            let lastId = '';
+
+            // Fetch all pages
+            while (hasMore) {
+                // Build URL with pagination parameter if needed
+                const url = afterId ? `${this.modelsUrl}?after=${afterId}` : this.modelsUrl;
+
+                const response = await requestUrl({
+                    url,
+                    method: 'GET',
+                    headers: {
+                        'x-api-key': this.apiKey,
+                        'anthropic-version': '2023-06-01'
+                    }
+                });
+
+                if (response.status < 200 || response.status >= 300) {
+                    throw new Error(`Models API request failed: ${response.status}\n${response.text}`);
                 }
-            });
 
-            if (response.status < 200 || response.status >= 300) {
-                throw new Error(`Models API request failed: ${response.status}\n${response.text}`);
+                // Validate basic response structure
+                const data = response.json as unknown;
+                if (!data || typeof data !== 'object' || !('data' in data) || !Array.isArray((data as { data: unknown }).data)) {
+                    throw new Error('Invalid models API response structure');
+                }
+
+                // Validate that each model has required fields
+                const modelsData = (data as { data: unknown[] }).data;
+                if (!modelsData.every((model: unknown) =>
+                    model && typeof model === 'object' && 'id' in model && typeof (model as { id: unknown }).id === 'string'
+                )) {
+                    throw new Error('Invalid model structure in API response');
+                }
+
+                const pageResponse = data as ModelsListResponse;
+
+                // Accumulate models from this page
+                allModels.push(...pageResponse.data);
+
+                // Store first_id from the first page
+                if (!firstId) {
+                    firstId = pageResponse.first_id;
+                }
+
+                // Update pagination state
+                lastId = pageResponse.last_id;
+                hasMore = pageResponse.has_more;
+
+                // Set up for next iteration
+                if (hasMore) {
+                    afterId = lastId;
+                }
             }
 
-            // Validate basic response structure
-            const data = response.json as unknown;
-            if (!data || typeof data !== 'object' || !('data' in data) || !Array.isArray((data as { data: unknown }).data)) {
-                throw new Error('Invalid models API response structure');
-            }
-
-            // Validate that each model has required fields
-            const modelsData = (data as { data: unknown[] }).data;
-            if (!modelsData.every((model: unknown) =>
-                model && typeof model === 'object' && 'id' in model && typeof (model as { id: unknown }).id === 'string'
-            )) {
-                throw new Error('Invalid model structure in API response');
-            }
-
-            return data as ModelsListResponse;
+            // Return combined response with all models
+            return {
+                data: allModels,
+                first_id: firstId,
+                has_more: false, // We've fetched all pages
+                last_id: lastId
+            };
         } catch (error) {
             if (error instanceof Error) {
                 throw error;
