@@ -24,6 +24,8 @@ export class PromptGeneratorService {
     private client: AnthropicClient;
     /** In-memory cache mapping request parameters to generated prompts */
     private cache: Map<string, GeneratedPrompt[]> = new Map();
+    /** In-flight requests to prevent duplicate concurrent API calls */
+    private inFlight: Map<string, Promise<string[]>> = new Map();
     /** Cache expiry time in milliseconds (10 minutes) */
     private readonly cacheExpiryMs = 10 * 60 * 1000; // 10 minutes
 
@@ -153,9 +155,17 @@ export class PromptGeneratorService {
             return cachedPrompts.map(p => p.text);
         }
 
+        // Deduplicate concurrent requests with identical parameters
+        const existing = this.inFlight.get(cacheKey);
+        if (existing) {
+            return existing;
+        }
+
         try {
             new Notice('Generating prompts...');
-            let prompts = await this.client.generatePrompts(count, model, systemPrompt, examplePrompt, type);
+            const pending = this.client.generatePrompts(count, model, systemPrompt, examplePrompt, type);
+            this.inFlight.set(cacheKey, pending);
+            let prompts = await pending;
 
             // Enforce requested count - models can occasionally over-generate
             // This ensures deterministic UX and correct cache key matching
@@ -180,6 +190,8 @@ export class PromptGeneratorService {
                 new Notice('Unknown error occurred while generating prompts');
             }
             throw error;
+        } finally {
+            this.inFlight.delete(cacheKey);
         }
     }
 
