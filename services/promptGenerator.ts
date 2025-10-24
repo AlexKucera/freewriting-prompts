@@ -144,6 +144,10 @@ export class PromptGeneratorService {
             errors.push('API key is required');
         }
 
+        if (!settings.model || settings.model.trim().length === 0) {
+            errors.push('Claude model is required');
+        }
+
         if (settings.timedCount < 1 || settings.timedCount > 50) {
             errors.push('Timed count must be between 1 and 50');
         }
