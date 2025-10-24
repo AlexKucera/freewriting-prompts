@@ -50,7 +50,7 @@ export class NotePromptsCommand {
         editor: Editor,
         view: MarkdownView
     ): Promise<void> {
-        if (!editor || !view) {
+        if (!NotePromptsCommand.canExecute(editor, view)) {
             new Notice('No active note found. Please open a note first.');
             return;
         }
