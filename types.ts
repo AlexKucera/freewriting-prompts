@@ -56,7 +56,7 @@ export interface AnthropicMessage {
  */
 export interface AnthropicRequest {
     /** Model identifier (e.g., 'claude-3-5-haiku-latest') */
-    model: string;
+    model: ModelId;
     /** Maximum number of tokens to generate in the response */
     max_tokens: number;
     /** Array of conversation messages between user and assistant */
@@ -153,20 +153,18 @@ export interface ModelCache {
 /**
  * Hardcoded fallback list of known Claude models.
  * Used when the Models API is unavailable or the API key is not configured.
- * This list should be updated periodically as new models are released.
  *
- * Organized by family (newest to oldest):
- * - Sonnet 4.5 (latest, released Sept 29, 2025)
- * - Haiku 4.5 (released Oct 1, 2025)
- * - Opus 4.1 (released Aug 5, 2025)
- * - Legacy models (Sonnet 4, 3.7, Opus 4, Haiku 3.5, Haiku 3)
+ * TODO: Keep this list updated with current models from:
+ * https://docs.anthropic.com/en/docs/about-claude/models
+ *
+ * Prefer "-latest" aliases where available for automatic updates.
  */
 export const ANTHROPIC_MODELS = [
-    // Current Models (using -latest aliases for stability)
+    // Current generation models (use -latest aliases where available)
     'claude-sonnet-4-5-20250929',
     'claude-haiku-4-5-20251001',
     'claude-opus-4-1-20250805',
-    // Legacy Models
+    // Legacy models
     'claude-sonnet-4-20250514',
     'claude-3-7-sonnet-latest',
     'claude-opus-4-20250514',
