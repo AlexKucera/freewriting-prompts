@@ -36,6 +36,8 @@ export class ModelService {
     private readonly CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
     /** Track whether we've shown the fallback notice this session to avoid spam */
     private hasShownFallbackNotice = false;
+    /** In-flight fetch promise to deduplicate concurrent API calls */
+    private inFlight: Promise<ModelOption[]> | null = null;
 
     /**
      * Creates a new model service instance.
@@ -72,13 +74,21 @@ export class ModelService {
             return this.getFallbackModels();
         }
 
-        // Try to fetch from API
+        // Try to fetch from API (deduplicate concurrent calls)
+        if (!this.inFlight) {
+            this.inFlight = (async () => {
+                const response = await this.anthropicClient.fetchModels();
+                this.updateCache(response.data);
+                // Reset notice flag on successful fetch
+                this.hasShownFallbackNotice = false;
+                return this.formatModels(response.data);
+            })().finally(() => {
+                this.inFlight = null;
+            });
+        }
+
         try {
-            const response = await this.anthropicClient.fetchModels();
-            this.updateCache(response.data);
-            // Reset notice flag on successful fetch
-            this.hasShownFallbackNotice = false;
-            return this.formatModels(response.data);
+            return await this.inFlight;
         } catch (error) {
             console.error('Failed to fetch models from API:', error);
             // Only show notice once per session to avoid spamming during offline periods
@@ -86,7 +96,8 @@ export class ModelService {
                 new Notice('Could not fetch latest models from API. Using default model list.');
                 this.hasShownFallbackNotice = true;
             }
-            return this.getFallbackModels();
+            // Prefer stale cache over hardcoded fallback if available
+            return this.getStaleCacheModels() ?? this.getFallbackModels();
         }
     }
 
@@ -118,7 +129,8 @@ export class ModelService {
                 new Notice('Fetching current models failed. Using hardcoded fallback list.');
                 this.hasShownFallbackNotice = true;
             }
-            return this.getFallbackModels();
+            // Prefer stale cache over hardcoded fallback if available
+            return this.getStaleCacheModels() ?? this.getFallbackModels();
         }
     }
 
@@ -174,6 +186,22 @@ export class ModelService {
         const now = Date.now();
         const age = now - this.modelCache.fetchedAt;
         return age < this.CACHE_TTL_MS;
+    }
+
+    /**
+     * Returns cached models if present, regardless of TTL.
+     *
+     * This is used as a fallback when API fetch fails - a slightly stale cache
+     * is often better than falling back to the hardcoded model list, which may
+     * be more outdated than the cached data.
+     *
+     * @returns Array of cached model options, or null if no cache exists
+     */
+    private getStaleCacheModels(): ModelOption[] | null {
+        if (!this.modelCache) {
+            return null;
+        }
+        return this.formatModels(this.modelCache.models);
     }
 
     /**
