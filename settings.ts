@@ -6,27 +6,75 @@ import FreewritingPromptsPlugin from './main';
 import { FreewritingPromptsSettings } from './types';
 import { ModelOption } from './services/modelService';
 
+/**
+ * Default plugin settings applied on first installation.
+ *
+ * These defaults are chosen to:
+ * - Use the most cost-effective model (Haiku) for testing
+ * - Provide reasonable timing for timed prompts (6 seconds)
+ * - Include example prompts that demonstrate expected styles
+ * - Maintain reasonable limits on prompt counts
+ */
 export const DEFAULT_SETTINGS: FreewritingPromptsSettings = {
+    /** Empty by default - user must provide their own API key */
     apiKey: '',
+    /** Haiku is the fastest and most cost-effective model for prompt generation */
     model: 'claude-3-5-haiku-latest' as const,
+    /** 10 prompts provides a good freewriting session length */
     timedCount: 10,
+    /** 6 seconds allows time to read and respond without feeling rushed */
     delaySeconds: 6,
+    /** 3 prompts is enough for a note without being overwhelming */
     noteCount: 3,
+    /** Base system prompt guiding the AI's creative writing style */
     systemPrompt: 'You are a creative writing assistant. Generate engaging, thought-provoking writing prompts that inspire creativity and help writers overcome blocks. Focus on variety, originality, and emotional depth.',
+    /** Example demonstrating short, immediate style for timed prompts */
     timedExamplePrompt: 'The interesting thing about a rose is…',
+    /** Example demonstrating more elaborate style for note prompts */
     freewritingExamplePrompt: 'Describe a world where colors have been outlawed and only exist in secret underground galleries.'
 };
 
+/**
+ * Settings UI tab for the Freewriting Prompts plugin.
+ *
+ * This class builds the settings interface with several key sections:
+ * - API Configuration: API key, model selection, connection testing
+ * - Command Configuration: Counts and timing for different prompt types
+ * - Prompt Customization: System prompt and examples to guide style
+ * - Actions: Cache clearing and other utility functions
+ *
+ * Key UX considerations:
+ * - Model dropdown loads asynchronously to avoid blocking UI
+ * - API key is masked as a password field
+ * - Model refresh happens automatically when API key is entered
+ * - Fallback to hardcoded models if API is unavailable
+ * - Detailed test results help troubleshoot connection issues
+ */
 export class FreewritingPromptsSettingTab extends PluginSettingTab {
     plugin: FreewritingPromptsPlugin;
+    /** Reference to model dropdown for dynamic updates */
     private modelDropdown: DropdownComponent | null = null;
+    /** Cached list of available models for the dropdown */
     private availableModels: ModelOption[] = [];
 
+    /**
+     * Creates a new settings tab instance.
+     *
+     * @param app - Obsidian app instance
+     * @param plugin - Plugin instance for accessing services and settings
+     */
     constructor(app: App, plugin: FreewritingPromptsPlugin) {
         super(app, plugin);
         this.plugin = plugin;
     }
 
+    /**
+     * Renders the settings UI.
+     *
+     * This method builds all settings sections and initiates async loading
+     * of model data without blocking the UI. The model dropdown starts with
+     * a "Loading models..." placeholder and updates when data arrives.
+     */
     async display(): Promise<void> {
         const { containerEl } = this;
         containerEl.empty();
@@ -195,6 +243,13 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
 
     // MARK: - Model Loading
 
+    /**
+     * Loads available models from the API.
+     *
+     * This is the core model-fetching method that calls the ModelService.
+     * Errors are logged but not shown to the user here - they're shown by
+     * the ModelService itself via Notice popups.
+     */
     private async loadModels(): Promise<void> {
         try {
             this.availableModels = await this.plugin.modelService.getAvailableModels();
@@ -206,8 +261,14 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
     }
 
     /**
-     * Load models asynchronously without blocking UI rendering
-     * Updates dropdown when models are fetched
+     * Loads models asynchronously without blocking UI rendering.
+     *
+     * This method is called after the UI is displayed to avoid blocking
+     * the settings tab from appearing. The dropdown starts in a "Loading..."
+     * state and updates when models arrive.
+     *
+     * If the current model is no longer available (e.g., deprecated), falls
+     * back to the first available model and updates settings.
      */
     private async loadModelsAsync(): Promise<void> {
         await this.loadModels();
@@ -233,6 +294,15 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
         }
     }
 
+    /**
+     * Populates the model dropdown with available models.
+     *
+     * If no models are available yet, shows a "Loading models..." placeholder
+     * and disables the dropdown. Once models load, this is called again to
+     * populate the real options.
+     *
+     * @param dropdown - Dropdown component to populate
+     */
     private populateModelDropdown(dropdown: DropdownComponent): void {
         if (this.availableModels.length === 0) {
             // No models available yet, disable dropdown
@@ -252,6 +322,16 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
         dropdown.setDisabled(false);
     }
 
+    /**
+     * Forces a refresh of the model list from the API.
+     *
+     * This is called when the user enters a new API key to ensure they see
+     * models available for their specific account. Shows a "Refreshing..."
+     * state during the fetch.
+     *
+     * If the current model is no longer available after refresh, falls back
+     * to the first available model and notifies the user.
+     */
     private async refreshModels(): Promise<void> {
         try {
             // Disable dropdown during refresh
@@ -294,6 +374,20 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
 
     // MARK: - API Testing
 
+    /**
+     * Tests the configured API key by making a minimal request to Claude.
+     *
+     * This provides immediate feedback about whether:
+     * - The API key is valid
+     * - The network connection works
+     * - The selected model is accessible
+     * - Performance is reasonable (response time)
+     *
+     * Shows detailed success or failure information via Notice, including
+     * troubleshooting guidance for common error scenarios.
+     *
+     * @param button - Button component to update with loading state
+     */
     private async testApiKey(button: ButtonComponent): Promise<void> {
         const originalText = button.buttonEl.textContent || 'Test Connection';
 

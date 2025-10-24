@@ -5,11 +5,46 @@ import { App, Editor, MarkdownView, Notice } from 'obsidian';
 import { PromptGeneratorService } from '../services/promptGenerator';
 import { FreewritingPromptsSettings } from '../types';
 
+/**
+ * Command handler for inserting writing prompts directly into notes.
+ *
+ * This command generates prompts and inserts them at the cursor position in
+ * the active note as formatted markdown. Unlike timed prompts, these are
+ * persistent and remain in the note for reference.
+ *
+ * Key responsibilities:
+ * - Validates editor and view state before execution
+ * - Generates prompts via the prompt service
+ * - Formats prompts with timestamp and numbering
+ * - Inserts at cursor with intelligent newline handling
+ * - Positions cursor after inserted content
+ *
+ * The formatting includes a timestamp to help users track when prompts were
+ * added, and numbered list format for easy reference.
+ */
 export class NotePromptsCommand {
+    /**
+     * Creates a new note prompts command handler.
+     *
+     * @param promptGenerator - Service for generating prompts from the API
+     */
     constructor(private promptGenerator: PromptGeneratorService) {}
 
     // MARK: - Public Methods
 
+    /**
+     * Executes the note prompts insertion.
+     *
+     * This method:
+     * 1. Validates that editor and view are available
+     * 2. Generates prompts through the service
+     * 3. Formats and inserts prompts at the cursor position
+     * 4. Shows success feedback to the user
+     *
+     * @param settings - Current plugin settings for generation parameters
+     * @param editor - Active editor instance for text insertion
+     * @param view - Active markdown view for context
+     */
     async execute(
         settings: FreewritingPromptsSettings,
         editor: Editor,
@@ -42,6 +77,20 @@ export class NotePromptsCommand {
 
     // MARK: - Private Methods
 
+    /**
+     * Inserts formatted prompts into the note at the cursor position.
+     *
+     * This method handles several edge cases:
+     * - Adds newline before if cursor is on a line with content
+     * - Adds newline after if cursor is not at end of document
+     * - Positions cursor at the end of inserted content
+     *
+     * The intelligent newline handling ensures prompts don't run into existing
+     * text and maintains proper spacing in the document.
+     *
+     * @param editor - Editor instance for text manipulation
+     * @param prompts - Array of prompt strings to insert
+     */
     private insertPromptsIntoNote(editor: Editor, prompts: string[]): void {
         const cursor = editor.getCursor();
         const currentLine = editor.getLine(cursor.line);
@@ -78,6 +127,24 @@ export class NotePromptsCommand {
         editor.setCursor(newCursorLine, newCursorCh);
     }
 
+    /**
+     * Formats prompts as markdown with timestamp header and numbered list.
+     *
+     * The format is:
+     * ```
+     * ## Writing Prompts (Jan 15, 2025, 02:30 PM)
+     *
+     * 1. [First prompt]
+     *
+     * 2. [Second prompt]
+     * ```
+     *
+     * The timestamp helps users track when prompts were generated, and the
+     * numbered list makes it easy to reference specific prompts.
+     *
+     * @param prompts - Array of prompt strings to format
+     * @returns Formatted markdown string ready for insertion
+     */
     private formatPrompts(prompts: string[]): string {
         const timestamp = new Date().toLocaleDateString('en-US', {
             year: 'numeric',
@@ -98,10 +165,31 @@ export class NotePromptsCommand {
 
     // MARK: - Utility Methods
 
+    /**
+     * Checks whether the command can be executed in the current context.
+     *
+     * Validates that:
+     * - Editor instance exists
+     * - Markdown view exists
+     * - An actual file is open (not just an empty pane)
+     *
+     * @param editor - Editor instance to validate
+     * @param view - Markdown view to validate
+     * @returns true if command can execute, false otherwise
+     */
     static canExecute(editor: Editor, view: MarkdownView): boolean {
         return !!(editor && view && view.file);
     }
 
+    /**
+     * Retrieves the current execution context from the app.
+     *
+     * Helper method for getting the active editor and view without having
+     * them explicitly passed. Useful for manual command invocation.
+     *
+     * @param app - Obsidian app instance
+     * @returns Object containing editor and view, or nulls if not available
+     */
     static getExecutionContext(app: App): { editor: Editor | null; view: MarkdownView | null } {
         const activeView = app.workspace.getActiveViewOfType(MarkdownView);
 

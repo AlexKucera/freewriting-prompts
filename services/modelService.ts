@@ -5,16 +5,41 @@ import { Notice } from 'obsidian';
 import { AnthropicClient } from '../api/anthropicClient';
 import { ModelInfo, ModelCache, ANTHROPIC_MODELS } from '../types';
 
+/**
+ * Simplified model representation for UI display purposes.
+ * Used to populate dropdown menus with user-friendly model names.
+ */
 export interface ModelOption {
+    /** Model identifier (e.g., 'claude-3-5-haiku-latest') */
     id: string;
+    /** Human-readable display name for the UI */
     displayName: string;
 }
 
+/**
+ * Service responsible for managing the list of available Claude models.
+ *
+ * Key responsibilities:
+ * - Fetches current model list from Anthropic API
+ * - Caches results for 24 hours to minimize API calls
+ * - Provides fallback to hardcoded model list when API is unavailable
+ * - Handles graceful degradation when API key is not configured
+ *
+ * The 24-hour cache TTL balances freshness with API efficiency - models don't
+ * change frequently enough to warrant more aggressive polling, but we want
+ * users to see new models within a reasonable timeframe.
+ */
 export class ModelService {
     private anthropicClient: AnthropicClient;
     private modelCache: ModelCache | null = null;
+    /** Cache time-to-live in milliseconds (24 hours) */
     private readonly CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+    /**
+     * Creates a new model service instance.
+     *
+     * @param anthropicClient - Client for making API requests to Anthropic
+     */
     constructor(anthropicClient: AnthropicClient) {
         this.anthropicClient = anthropicClient;
     }
@@ -22,9 +47,17 @@ export class ModelService {
     // MARK: - Public Methods
 
     /**
-     * Get available models with caching and fallback logic
-     * Returns models from cache if valid, otherwise fetches from API
-     * Falls back to hardcoded list if API fails
+     * Retrieves available Claude models with intelligent caching and fallback.
+     *
+     * This method implements a three-tier strategy:
+     * 1. Return cached models if valid (within 24-hour TTL)
+     * 2. Fetch fresh models from API if cache is stale or empty
+     * 3. Fall back to hardcoded ANTHROPIC_MODELS if API fails
+     *
+     * If no API key is configured, quietly returns fallback without showing errors,
+     * since this is expected during initial plugin setup.
+     *
+     * @returns Array of model options formatted for UI display
      */
     async getAvailableModels(): Promise<ModelOption[]> {
         // Check if we have a valid cache
@@ -50,8 +83,13 @@ export class ModelService {
     }
 
     /**
-     * Force refresh the model list from API
-     * Used when user changes API key
+     * Forces a refresh of the model list from the API, bypassing cache.
+     *
+     * This is called when the user enters a new API key in settings, ensuring
+     * they immediately see the correct models available for their account.
+     * Falls back to hardcoded models if the API request fails.
+     *
+     * @returns Array of current available models
      */
     async refreshModels(): Promise<ModelOption[]> {
         // If no API key, quietly return fallback
@@ -71,21 +109,33 @@ export class ModelService {
     }
 
     /**
-     * Load cache from plugin data
+     * Loads cached model data from plugin persistent storage.
+     *
+     * Called during plugin initialization to restore the previous session's
+     * model list, avoiding an immediate API call on every startup.
+     *
+     * @param cache - Previously saved cache data, or null if none exists
      */
     loadCache(cache: ModelCache | null): void {
         this.modelCache = cache;
     }
 
     /**
-     * Get current cache for saving to plugin data
+     * Retrieves current cache for persistence to disk.
+     *
+     * Called during plugin save operations to preserve the model cache
+     * across Obsidian restarts, maintaining the 24-hour TTL.
+     *
+     * @returns Current cache state, or null if no cache exists
      */
     getCache(): ModelCache | null {
         return this.modelCache;
     }
 
     /**
-     * Clear the cache (for testing or manual refresh)
+     * Clears the cached model list, forcing a fresh fetch on next access.
+     *
+     * Useful for testing or troubleshooting cache-related issues.
      */
     clearCache(): void {
         this.modelCache = null;
@@ -94,7 +144,13 @@ export class ModelService {
     // MARK: - Private Methods
 
     /**
-     * Check if the current cache is still valid (within TTL)
+     * Checks whether the current cache is still valid based on TTL.
+     *
+     * Cache is considered valid if it exists and was fetched less than
+     * 24 hours ago. This prevents excessive API calls while ensuring
+     * reasonable freshness of model data.
+     *
+     * @returns true if cache exists and is within TTL, false otherwise
      */
     private isCacheValid(): boolean {
         if (!this.modelCache) {
@@ -107,7 +163,11 @@ export class ModelService {
     }
 
     /**
-     * Update cache with new model data
+     * Updates the cache with freshly fetched model data.
+     *
+     * Sets the fetchedAt timestamp to now, starting the 24-hour TTL countdown.
+     *
+     * @param models - Array of model information from the API
      */
     private updateCache(models: ModelInfo[]): void {
         this.modelCache = {
@@ -117,8 +177,14 @@ export class ModelService {
     }
 
     /**
-     * Format ModelInfo array to ModelOption array for dropdown
-     * Uses display_name if available, otherwise falls back to id
+     * Transforms API model data into UI-friendly format.
+     *
+     * Prefers display_name when available for better UX, falls back to
+     * model ID if display_name is missing. Results are sorted alphabetically
+     * for easier scanning in the dropdown.
+     *
+     * @param models - Raw model info from API
+     * @returns Formatted options ready for dropdown display
      */
     private formatModels(models: ModelInfo[]): ModelOption[] {
         return models.map(model => ({
@@ -128,7 +194,13 @@ export class ModelService {
     }
 
     /**
-     * Get fallback models from hardcoded list
+     * Provides fallback model list when API is unavailable.
+     *
+     * Uses the hardcoded ANTHROPIC_MODELS constant which should be periodically
+     * updated to include newly released models. This ensures the plugin remains
+     * functional even during API outages or when no API key is configured.
+     *
+     * @returns Array of fallback model options
      */
     private getFallbackModels(): ModelOption[] {
         return ANTHROPIC_MODELS.map(id => ({
