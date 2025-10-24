@@ -39,9 +39,12 @@ export class AnthropicClient {
             }
             finalSystemPrompt += this.SYSTEM_PROMPT_SUFFIX;
 
+            // Use smaller max_tokens for timed prompts to reduce latency/cost
+            const maxTokens = type === 'timed' ? 256 : 1000;
+
             const request: AnthropicRequest = {
                 model,
-                max_tokens: 1000,
+                max_tokens: maxTokens,
                 messages: [{ role: 'user', content: userMessage }],
                 system: finalSystemPrompt
             };
