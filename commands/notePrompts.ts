@@ -81,8 +81,9 @@ export class NotePromptsCommand {
      * Inserts formatted prompts into the note at the cursor position.
      *
      * This method handles several edge cases:
-     * - Adds newline before if cursor is on a line with content
-     * - Adds newline after if cursor is not at end of document
+     * - Collapses any text selection before insertion
+     * - Adds newline before if there's text before the cursor
+     * - Adds newline after if there's text after the cursor or more lines below
      * - Positions cursor at the end of inserted content
      *
      * The intelligent newline handling ensures prompts don't run into existing
@@ -92,29 +93,28 @@ export class NotePromptsCommand {
      * @param prompts - Array of prompt strings to insert
      */
     private insertPromptsIntoNote(editor: Editor, prompts: string[]): void {
-        const cursor = editor.getCursor();
-        const currentLine = editor.getLine(cursor.line);
+        // Normalize to an insertion point (collapse any selection)
+        const from = editor.getCursor('from');
+        const to = editor.getCursor('to');
+        const hasSelection = from.line !== to.line || from.ch !== to.ch;
+        if (hasSelection) {
+            editor.setSelection(from, from);
+        }
+        const cursor = editor.getCursor(); // refreshed after collapse
+        const currentLine = editor.getLine(cursor.line) ?? '';
 
-        // Determine if we need to add a newline before our content
-        const needsNewlineBefore = currentLine.trim().length > 0;
+        const hasTextBefore = cursor.ch > 0 && currentLine.slice(0, cursor.ch).trim().length > 0;
+        const hasTextAfter = cursor.ch < currentLine.length && currentLine.slice(cursor.ch).trim().length > 0;
 
         // Format the prompts
         const formattedPrompts = this.formatPrompts(prompts);
 
         // Prepare the content to insert
-        let contentToInsert = '';
-
-        if (needsNewlineBefore) {
-            contentToInsert += '\n';
-        }
-
-        contentToInsert += formattedPrompts;
-
-        // If we're not at the end of the document, add a trailing newline
         const lastLine = editor.lastLine();
-        if (cursor.line < lastLine) {
-            contentToInsert += '\n';
-        }
+        let contentToInsert = '';
+        if (hasTextBefore) contentToInsert += '\n';
+        contentToInsert += formattedPrompts;
+        if (hasTextAfter || cursor.line < lastLine) contentToInsert += '\n';
 
         // Insert the content at the cursor position
         editor.replaceSelection(contentToInsert);
@@ -146,13 +146,13 @@ export class NotePromptsCommand {
      * @returns Formatted markdown string ready for insertion
      */
     private formatPrompts(prompts: string[]): string {
-        const timestamp = new Date().toLocaleDateString('en-US', {
+        const timestamp = new Intl.DateTimeFormat('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        });
+        }).format(new Date());
 
         let formatted = `## Writing Prompts (${timestamp})\n\n`;
 
