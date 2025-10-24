@@ -1,3 +1,4 @@
+import globals from 'globals';
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
@@ -7,6 +8,7 @@ export default tseslint.config(
         ignores: [
             'node_modules/**',
             'main.js',
+            'dist/**',
             '*.config.js',
             '*.config.mjs'
         ]
@@ -15,6 +17,8 @@ export default tseslint.config(
     eslint.configs.recommended,
     // TypeScript ESLint recommended rules
     ...tseslint.configs.recommended,
+    // Type-aware rules (requires tsconfig.json)
+    ...tseslint.configs.recommendedTypeChecked,
     // Project-specific configuration
     {
         files: ['**/*.ts'],
@@ -22,18 +26,16 @@ export default tseslint.config(
             parser: tseslint.parser,
             parserOptions: {
                 sourceType: 'module',
-                ecmaVersion: 2020
+                ecmaVersion: 'latest',
+                project: ['./tsconfig.json']
             },
             globals: {
-                // Node.js globals
-                console: 'readonly',
-                process: 'readonly',
-                __dirname: 'readonly',
-                __filename: 'readonly',
-                Buffer: 'readonly',
-                setImmediate: 'readonly',
-                clearImmediate: 'readonly'
+                ...globals.node,
+                ...globals.browser
             }
+        },
+        plugins: {
+            '@typescript-eslint': tseslint.plugin
         },
         rules: {
             // Disable base rule in favor of TypeScript version
