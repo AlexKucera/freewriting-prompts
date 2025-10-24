@@ -155,7 +155,13 @@ export class PromptGeneratorService {
 
         try {
             new Notice('Generating prompts...');
-            const prompts = await this.client.generatePrompts(count, model, systemPrompt, examplePrompt, type);
+            let prompts = await this.client.generatePrompts(count, model, systemPrompt, examplePrompt, type);
+
+            // Enforce requested count - models can occasionally over-generate
+            // This ensures deterministic UX and correct cache key matching
+            if (prompts.length > count) {
+                prompts = prompts.slice(0, count);
+            }
 
             const generatedPrompts: GeneratedPrompt[] = prompts.map(text => ({
                 text,
