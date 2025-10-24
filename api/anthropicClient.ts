@@ -17,10 +17,14 @@ import { AnthropicRequest, AnthropicResponse, ModelInfo, ModelsListResponse } fr
  */
 export class AnthropicClient {
     private apiKey: string;
+    /** Anthropic API base URL - centralized to avoid drift */
+    private readonly API_BASE = 'https://api.anthropic.com/v1';
+    /** Anthropic API version - centralized for consistency across all requests */
+    private readonly API_VERSION = '2023-06-01';
     /** Base URL for the Anthropic Messages API endpoint */
-    private messagesUrl = 'https://api.anthropic.com/v1/messages';
+    private messagesUrl = `${this.API_BASE}/messages`;
     /** Base URL for the Anthropic Models API endpoint */
-    private modelsUrl = 'https://api.anthropic.com/v1/models';
+    private modelsUrl = `${this.API_BASE}/models`;
 
     /**
      * Suffix appended to all system prompts to enforce consistent output format.
@@ -147,7 +151,7 @@ export class AnthropicClient {
                     method: 'GET',
                     headers: {
                         'x-api-key': this.apiKey,
-                        'anthropic-version': '2023-06-01'
+                        'anthropic-version': this.API_VERSION
                     }
                 });
 
@@ -244,7 +248,7 @@ export class AnthropicClient {
                 headers: {
                     'Content-Type': 'application/json',
                     'x-api-key': this.apiKey,
-                    'anthropic-version': '2023-06-01'
+                    'anthropic-version': this.API_VERSION
                 },
                 body: JSON.stringify(request)
             });
@@ -375,8 +379,10 @@ export class AnthropicClient {
 
             // Validate that the assistant actually returned "ping"
             // This ensures the API is working correctly, not just returning a 2xx status
+            // Normalize to tolerate punctuation and quotes (e.g., "ping.", ""ping"")
             const returnedText = (response.content?.[0]?.text || '').trim().toLowerCase();
-            const isValid = returnedText === 'ping';
+            const normalized = returnedText.replace(/^[^a-z]+|[^a-z]+$/g, '').replace(/\s+/g, '');
+            const isValid = normalized === 'ping';
 
             return {
                 success: isValid,
