@@ -37,6 +37,8 @@ export default class FreewritingPromptsPlugin extends Plugin {
     timedCommand: TimedPromptsCommand;
     /** Command handler for note prompt insertion */
     noteCommand: NotePromptsCommand;
+    /** Tracks last saved API key to avoid unnecessary cache clears */
+    private lastApiKey?: string;
 
     /**
      * Called when the plugin loads.
@@ -49,7 +51,13 @@ export default class FreewritingPromptsPlugin extends Plugin {
     async onload() {
         // Load data once and use it for both settings and model cache
         const data = await this.loadData() as FreewritingPromptsData | null;
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+
+        // Destructure to prevent modelCache from being merged into settings (type drift)
+        const { modelCache, ...savedSettings } = data ?? {};
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
+
+        // Track initial API key to detect changes on save
+        this.lastApiKey = this.settings.apiKey;
 
         // Initialize services
         this.promptGenerator = new PromptGeneratorService(this.settings);
@@ -58,8 +66,8 @@ export default class FreewritingPromptsPlugin extends Plugin {
         this.noteCommand = new NotePromptsCommand(this.promptGenerator);
 
         // Load model cache
-        if (data?.modelCache) {
-            this.modelService.loadCache(data.modelCache);
+        if (modelCache) {
+            this.modelService.loadCache(modelCache);
         }
 
         // Register commands
@@ -94,16 +102,6 @@ export default class FreewritingPromptsPlugin extends Plugin {
     // MARK: - Settings Management
 
     /**
-     * Loads plugin settings from disk.
-     *
-     * Merges saved settings with defaults to ensure any new settings added
-     * in plugin updates have sensible default values.
-     */
-    async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    }
-
-    /**
      * Saves plugin settings to disk.
      *
      * Includes both user settings and the model cache to avoid re-fetching
@@ -118,9 +116,11 @@ export default class FreewritingPromptsPlugin extends Plugin {
         };
         await this.saveData(data);
 
-        // Update the prompt generator with new settings
-        if (this.promptGenerator) {
+        // Update the prompt generator only if API key actually changed
+        // This avoids clearing the prompt cache unnecessarily on every save
+        if (this.promptGenerator && this.lastApiKey !== this.settings.apiKey) {
             this.promptGenerator.updateApiKey(this.settings.apiKey);
+            this.lastApiKey = this.settings.apiKey;
         }
     }
 
