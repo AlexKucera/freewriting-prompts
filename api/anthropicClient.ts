@@ -133,8 +133,14 @@ export class AnthropicClient {
 
             // Fetch all pages
             while (hasMore) {
-                // Build URL with pagination parameter if needed
-                const url = afterId ? `${this.modelsUrl}?after=${afterId}` : this.modelsUrl;
+                // Build URL with pagination parameters
+                // Use limit=1000 (Anthropic's max) to minimize round trips
+                const params = new URLSearchParams();
+                params.set('limit', '1000');
+                if (afterId) {
+                    params.set('after', afterId);
+                }
+                const url = `${this.modelsUrl}?${params.toString()}`;
 
                 const response = await requestUrl({
                     url,
@@ -273,7 +279,12 @@ export class AnthropicClient {
             throw new Error('No content received from API');
         }
 
-        const text = response.content[0].text;
+        // Parse all text blocks, not just the first one
+        // Anthropic API can return multiple content blocks
+        const text = response.content
+            .filter(c => c && c.type === 'text' && typeof c.text === 'string')
+            .map(c => c.text)
+            .join('\n');
         const lines = text.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0);
@@ -362,9 +373,16 @@ export class AnthropicClient {
             const response = await this.makeRequest(testRequest);
             const responseTime = Date.now() - startTime;
 
+            // Validate that the assistant actually returned "ping"
+            // This ensures the API is working correctly, not just returning a 2xx status
+            const returnedText = (response.content?.[0]?.text || '').trim().toLowerCase();
+            const isValid = returnedText === 'ping';
+
             return {
-                success: true,
-                message: 'API key is valid and working correctly',
+                success: isValid,
+                message: isValid
+                    ? 'API key is valid and working correctly'
+                    : 'API responded but returned unexpected content',
                 details: {
                     model: response.model,
                     responseTime,
