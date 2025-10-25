@@ -217,9 +217,14 @@ export class AnthropicClient {
                 }
             }
 
+            // Sort models for stable dropdown UX across sessions/pages
+            const sorted = allModels.slice().sort((a, b) =>
+                (a.display_name ?? a.id).localeCompare(b.display_name ?? b.id)
+            );
+
             // Return combined response with all models
             return {
-                data: allModels,
+                data: sorted,
                 first_id: firstId,
                 has_more: false, // We've fetched all pages
                 last_id: lastId
@@ -320,8 +325,8 @@ export class AnthropicClient {
         const prompts: string[] = [];
 
         for (const line of lines) {
-            // Remove numbering (1., 2., etc.) and clean up the prompt
-            const cleaned = line.replace(/^\d+\.\s*/, '').trim();
+            // Remove list prefixes: numbered (1., 1)), bullets (-, *, •)
+            const cleaned = line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/, '').trim();
             if (cleaned.length > 0) {
                 prompts.push(cleaned);
             }
