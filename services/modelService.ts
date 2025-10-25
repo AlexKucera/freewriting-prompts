@@ -74,31 +74,8 @@ export class ModelService {
             return this.getFallbackModels();
         }
 
-        // Try to fetch from API (deduplicate concurrent calls)
-        if (!this.inFlight) {
-            this.inFlight = (async () => {
-                const response = await this.anthropicClient.fetchModels();
-                this.updateCache(response.data);
-                // Reset notice flag on successful fetch
-                this.hasShownFallbackNotice = false;
-                return this.formatModels(response.data);
-            })().finally(() => {
-                this.inFlight = null;
-            });
-        }
-
-        try {
-            return await this.inFlight;
-        } catch (error) {
-            console.error('Failed to fetch models from API:', error);
-            // Only show notice once per session to avoid spamming during offline periods
-            if (!this.hasShownFallbackNotice) {
-                new Notice('Could not fetch latest models from API. Using default model list.');
-                this.hasShownFallbackNotice = true;
-            }
-            // Prefer stale cache over hardcoded fallback if available
-            return this.getStaleCacheModels() ?? this.getFallbackModels();
-        }
+        // Use shared fetch path with deduplication
+        return this.fetchWithDeduplication('Could not fetch latest models from API. Using default model list.');
     }
 
     /**
@@ -108,6 +85,9 @@ export class ModelService {
      * they immediately see the correct models available for their account.
      * Falls back to hardcoded models if the API request fails.
      *
+     * Uses the same in-flight deduplication as getAvailableModels to prevent
+     * concurrent refreshModels and getAvailableModels calls from both hitting the API.
+     *
      * @returns Array of current available models
      */
     async refreshModels(): Promise<ModelOption[]> {
@@ -116,22 +96,8 @@ export class ModelService {
             return this.getFallbackModels();
         }
 
-        try {
-            const response = await this.anthropicClient.fetchModels();
-            this.updateCache(response.data);
-            // Reset notice flag on successful fetch
-            this.hasShownFallbackNotice = false;
-            return this.formatModels(response.data);
-        } catch (error) {
-            console.error('Failed to refresh models from API:', error);
-            // Only show notice once per session to avoid spamming during repeated failures
-            if (!this.hasShownFallbackNotice) {
-                new Notice('Fetching current models failed. Using hardcoded fallback list.');
-                this.hasShownFallbackNotice = true;
-            }
-            // Prefer stale cache over hardcoded fallback if available
-            return this.getStaleCacheModels() ?? this.getFallbackModels();
-        }
+        // Use shared fetch path with deduplication
+        return this.fetchWithDeduplication('Fetching current models failed. Using hardcoded fallback list.');
     }
 
     /**
@@ -161,13 +127,56 @@ export class ModelService {
     /**
      * Clears the cached model list, forcing a fresh fetch on next access.
      *
+     * Also resets the fallback notice flag to allow showing error messages
+     * again after manual cache reset. This prevents stale "notice already shown"
+     * state across cache resets.
+     *
      * Useful for testing or troubleshooting cache-related issues.
      */
     clearCache(): void {
         this.modelCache = null;
+        this.hasShownFallbackNotice = false;
     }
 
     // MARK: - Private Methods
+
+    /**
+     * Shared fetch method with in-flight deduplication.
+     *
+     * This method is used by both getAvailableModels and refreshModels to prevent
+     * concurrent calls from making duplicate API requests. If a fetch is already
+     * in progress, subsequent calls will wait for and return the same promise.
+     *
+     * @param errorNoticeMessage - Message to show user if fetch fails
+     * @returns Array of model options from the API or fallback
+     */
+    private async fetchWithDeduplication(errorNoticeMessage: string): Promise<ModelOption[]> {
+        // Try to fetch from API (deduplicate concurrent calls)
+        if (!this.inFlight) {
+            this.inFlight = (async () => {
+                const response = await this.anthropicClient.fetchModels();
+                this.updateCache(response.data);
+                // Reset notice flag on successful fetch
+                this.hasShownFallbackNotice = false;
+                return this.formatModels(response.data);
+            })().finally(() => {
+                this.inFlight = null;
+            });
+        }
+
+        try {
+            return await this.inFlight;
+        } catch (error) {
+            console.error('Failed to fetch models from API:', error);
+            // Only show notice once per session to avoid spamming
+            if (!this.hasShownFallbackNotice) {
+                new Notice(errorNoticeMessage);
+                this.hasShownFallbackNotice = true;
+            }
+            // Prefer stale cache over hardcoded fallback if available
+            return this.getStaleCacheModels() ?? this.getFallbackModels();
+        }
+    }
 
     /**
      * Checks whether the current cache is still valid based on TTL.
@@ -208,15 +217,22 @@ export class ModelService {
      * Updates the cache with freshly fetched model data.
      *
      * Deduplicates models by ID to guard against accidental duplicates
-     * across pagination responses. Sets the fetchedAt timestamp to now,
+     * across pagination responses. Filters to include only model-like entries
+     * (type contains "model") to exclude non-chat API entries if they appear
+     * in future API responses. Sets the fetchedAt timestamp to now,
      * starting the 24-hour TTL countdown.
      *
      * @param models - Array of model information from the API
      */
     private updateCache(models: ModelInfo[]): void {
-        // Deduplicate by id using Map
+        // Deduplicate by id using Map and filter to model-like entries only
         const byId = new Map<string, ModelInfo>();
         for (const model of models) {
+            // Filter out non-model entries (e.g., if API starts returning other types)
+            // Keep entries where type contains "model" (case-insensitive)
+            if (model.type && !/model/i.test(model.type)) {
+                continue;
+            }
             byId.set(model.id, model);
         }
 
