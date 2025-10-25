@@ -176,9 +176,9 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                 if (this.availableModels.length > 0) {
                     dropdown.setValue(this.plugin.settings.model);
                 }
-                dropdown.onChange(async (value) => {
+                dropdown.onChange((value) => {
                     this.plugin.settings.model = value;
-                    await this.plugin.saveSettings();
+                    this.debounceSaveSettings();
                 });
             });
 
@@ -292,6 +292,18 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                     const notice = new Notice('Cache cleared');
                     setTimeout(() => notice.hide(), 2000);
                 }));
+
+        new Setting(containerEl)
+            .setName('Clear Model List Cache')
+            .setDesc('Clear cached Claude model list to force a fresh fetch from the API')
+            .addButton(button => button
+                .setButtonText('Clear Models Cache')
+                .onClick(() => {
+                    this.plugin.modelService.clearCache();
+                    // Show a temporary notice
+                    const notice = new Notice('Model list cache cleared');
+                    setTimeout(() => notice.hide(), 2000);
+                }));
     }
 
     // MARK: - Model Loading
@@ -338,7 +350,12 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             } else {
                 // Fall back to first available model if current one is gone
                 const fallbackModel = this.availableModels[0];
-                if (fallbackModel && this.plugin.settings.model !== fallbackModel.id) {
+                if (!fallbackModel) {
+                    // Edge case: both API and fallback returned empty
+                    this.modelDropdown.setDisabled(true);
+                    this.modelDropdown.selectEl.empty();
+                    this.modelDropdown.addOption('', 'No models available');
+                } else if (this.plugin.settings.model !== fallbackModel.id) {
                     this.modelDropdown.setValue(fallbackModel.id);
                     this.plugin.settings.model = fallbackModel.id;
                     await this.plugin.saveSettings();
