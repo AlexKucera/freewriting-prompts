@@ -135,6 +135,9 @@ export default class FreewritingPromptsPlugin extends Plugin {
         if (this.promptGenerator && this.lastApiKey !== this.settings.apiKey) {
             this.promptGenerator.updateApiKey(this.settings.apiKey);
             this.lastApiKey = this.settings.apiKey;
+            // Clear model cache to ensure model list reflects new account entitlements
+            // This prevents cross-key cache leakage if settings are changed programmatically
+            this.modelService?.clearCache();
         }
     }
 
