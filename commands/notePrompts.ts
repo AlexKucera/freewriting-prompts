@@ -98,7 +98,7 @@ export class NotePromptsCommand {
         const to = editor.getCursor('to');
         const hasSelection = from.line !== to.line || from.ch !== to.ch;
         if (hasSelection) {
-            editor.setSelection(from, from);
+            editor.setCursor(from);
         }
         const cursor = editor.getCursor(); // refreshed after collapse
         const currentLine = editor.getLine(cursor.line) ?? '';
@@ -146,9 +146,8 @@ export class NotePromptsCommand {
      * @returns Formatted markdown string ready for insertion
      */
     private formatPrompts(prompts: string[]): string {
-        // Use user's locale for timestamp formatting to respect regional preferences
-        const locale = navigator?.language ?? 'en-US';
-        const timestamp = new Intl.DateTimeFormat(locale, {
+        // Let Intl pick the default environment locale automatically
+        const timestamp = new Intl.DateTimeFormat(undefined, {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
