@@ -222,12 +222,17 @@ export class AnthropicClient {
                 (a.display_name ?? a.id).localeCompare(b.display_name ?? b.id)
             );
 
+            // Recompute pagination IDs from sorted array to maintain consistency
+            // with returned data (original IDs were from unsorted API responses)
+            const sortedFirstId = sorted.length > 0 ? sorted[0].id : firstId;
+            const sortedLastId = sorted.length > 0 ? sorted[sorted.length - 1].id : lastId;
+
             // Return combined response with all models
             return {
                 data: sorted,
-                first_id: firstId,
+                first_id: sortedFirstId,
                 has_more: false, // We've fetched all pages
-                last_id: lastId
+                last_id: sortedLastId
             };
         } catch (error) {
             if (error instanceof Error) {
