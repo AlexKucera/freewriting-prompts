@@ -1,7 +1,7 @@
 # Freewriting Prompts
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/AlexKucera/freewriting-prompts?color=blue)](https://github.com/AlexKucera/freewriting-prompts/releases)
-[![License: MIT](https://img.shields.io/github/license/AlexKucera/freewriting-prompts?color=yellow)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/github/license/AlexKucera/freewriting-prompts?color=yellow)](https://www.gnu.org/licenses/gpl-3.0)
 [![Downloads](https://img.shields.io/github/downloads/AlexKucera/freewriting-prompts/total?color=green)](https://github.com/AlexKucera/freewriting-prompts/releases)
 [![CodeRabbit Reviews](https://img.shields.io/coderabbit/prs/github/AlexKucera/freewriting-prompts)](https://coderabbit.ai/)
 ![](https://img.shields.io/badge/mobile_supported-green?label=obsidian&labelColor=purple)
@@ -226,8 +226,8 @@ The plugin provides detailed error messages for different scenarios:
 
 ### Getting Help
 
-- **Issues**: Report bugs on [GitHub Issues](https://github.com/alexanderkucera/obsidian-freewriting-prompts/issues)
-- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/alexanderkucera/obsidian-freewriting-prompts/discussions)
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/AlexKucera/freewriting-prompts/issues)
+- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/AlexKucera/freewriting-prompts/discussions)
 
 ## Development
 
@@ -235,8 +235,8 @@ The plugin provides detailed error messages for different scenarios:
 
 ```bash
 # Clone the repository
-git clone https://github.com/alexanderkucera/obsidian-freewriting-prompts.git
-cd obsidian-freewriting-prompts
+git clone https://github.com/AlexKucera/freewriting-prompts.git
+cd freewriting-prompts
 
 # Install dependencies
 npm install
@@ -284,7 +284,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3 (GPLv3) - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 

@@ -1,25 +1,76 @@
 // ABOUTME: Anthropic API client for generating writing prompts using Claude
 // ABOUTME: Handles API requests, error handling, and response parsing
 
-import { Notice, requestUrl } from 'obsidian';
-import { AnthropicRequest, AnthropicResponse, AnthropicModel } from '../types';
+import { requestUrl } from 'obsidian';
+import { AnthropicRequest, AnthropicResponse, ModelInfo, ModelsListResponse } from '../types';
 
+/**
+ * Client for interacting with the Anthropic API to generate writing prompts.
+ * Handles authentication, request formatting, error handling, and response parsing.
+ *
+ * This client manages two key responsibilities:
+ * 1. Generating writing prompts using the Messages API
+ * 2. Fetching available Claude models using the Models API
+ *
+ * It includes type-specific prompt modifiers to ensure timed prompts are short
+ * and immediate while note prompts can be more elaborate and creative.
+ */
 export class AnthropicClient {
     private apiKey: string;
-    private baseUrl = 'https://api.anthropic.com/v1/messages';
+    /** Anthropic API base URL - centralized to avoid drift */
+    private readonly API_BASE = 'https://api.anthropic.com/v1';
+    /** Anthropic API version - centralized for consistency across all requests */
+    private readonly API_VERSION = '2023-06-01';
+    /** Base URL for the Anthropic Messages API endpoint */
+    private messagesUrl = `${this.API_BASE}/messages`;
+    /** Base URL for the Anthropic Models API endpoint */
+    private modelsUrl = `${this.API_BASE}/models`;
+
+    /**
+     * Suffix appended to all system prompts to enforce consistent output format.
+     * Ensures Claude returns only numbered prompts without additional commentary,
+     * which simplifies parsing and provides a predictable user experience.
+     */
     private readonly SYSTEM_PROMPT_SUFFIX = '\n\nIMPORTANT OUTPUT REQUIREMENTS:\n- Return ONLY the numbered writing prompts, nothing else\n- Do not include any explanations, questions, or additional commentary\n- Do not ask if the user wants more prompts or different styles\n- Format: numbered list with one prompt per line (1. [prompt], 2. [prompt], etc.)';
 
+    /**
+     * Additional instructions for timed prompts to make them extremely brief.
+     * Timed prompts appear as notifications and need to be answerable quickly,
+     * so we enforce a short, concrete style optimized for rapid freewriting.
+     */
     private readonly TIMED_PROMPT_MODIFIER = '\n\nFOR TIMED PROMPTS - MAKE THEM EXTREMELY SHORT AND DIRECT:\n- Each prompt should be answerable in 1-5 words or a single sentence\n- Focus on immediate, concrete observations or quick thoughts\n- Avoid complex scenarios or deep philosophical questions\n- Examples: "What color is closest to you?", "Your favorite word today:", "First sound you hear:", "Describe your mood in one word", "Name something soft"\n- Keep prompts simple, immediate, and concrete';
 
+    /**
+     * Creates a new Anthropic API client.
+     * @param apiKey - The Anthropic API key for authentication
+     */
     constructor(apiKey: string) {
         this.apiKey = apiKey;
     }
 
     // MARK: - Public Methods
 
+    /**
+     * Generates writing prompts using the Claude API.
+     *
+     * This method constructs an appropriate prompt based on the type (timed vs note),
+     * applies relevant system instructions, and parses the response into an array
+     * of clean prompt strings.
+     *
+     * Timed prompts use fewer tokens (256) for faster generation and lower cost,
+     * while note prompts use more tokens (1000) for richer, more elaborate prompts.
+     *
+     * @param count - Number of prompts to generate
+     * @param model - Claude model ID to use (e.g., 'claude-3-5-haiku-latest')
+     * @param systemPrompt - Base system instructions for the AI
+     * @param examplePrompt - Example prompt to guide the style
+     * @param type - Whether this is for 'timed' notifications or 'note' insertion
+     * @returns Array of generated prompt strings
+     * @throws Error if API key is missing or API request fails
+     */
     async generatePrompts(
         count: number,
-        model: AnthropicModel,
+        model: string,
         systemPrompt: string,
         examplePrompt: string,
         type: 'timed' | 'note'
@@ -38,9 +89,12 @@ export class AnthropicClient {
             }
             finalSystemPrompt += this.SYSTEM_PROMPT_SUFFIX;
 
+            // Use smaller max_tokens for timed prompts to reduce latency/cost
+            const maxTokens = type === 'timed' ? 256 : 1000;
+
             const request: AnthropicRequest = {
                 model,
-                max_tokens: 1000,
+                max_tokens: maxTokens,
                 messages: [{ role: 'user', content: userMessage }],
                 system: finalSystemPrompt
             };
@@ -50,15 +104,156 @@ export class AnthropicClient {
         } catch (error) {
             console.error('Error generating prompts:', error);
             if (error instanceof Error) {
-                new Notice(`Failed to generate prompts: ${error.message}`);
                 throw error;
             }
             throw new Error('Unknown error occurred while generating prompts');
         }
     }
 
+    /**
+     * Fetches the list of available Claude models from the Anthropic API.
+     *
+     * This method implements pagination to ensure all available models are retrieved.
+     * It continues fetching pages while has_more is true, using the after parameter
+     * with the last_id from each response to request subsequent pages.
+     *
+     * The response is cached by ModelService with a 24-hour TTL.
+     *
+     * @returns Response containing array of all available models with final pagination metadata
+     * @throws Error if API key is missing, request fails, or response is malformed
+     */
+    async fetchModels(): Promise<ModelsListResponse> {
+        if (!this.apiKey) {
+            throw new Error('API key is required');
+        }
+
+        try {
+            // Accumulate all models across pages
+            const allModels: ModelInfo[] = [];
+            // Track seen model IDs to filter duplicates
+            const seenIds = new Set<string>();
+            let hasMore = true;
+            let afterId: string | undefined = undefined;
+            let firstId = '';
+            let lastId = '';
+            // Loop safety: prevent runaway pagination
+            let iterations = 0;
+            const maxIterations = 1000;
+
+            // Fetch all pages with safety guards
+            while (hasMore) {
+                // Guard against infinite loops
+                iterations++;
+                if (iterations > maxIterations) {
+                    throw new Error(`Pagination exceeded maximum iterations (${maxIterations}). Possible API issue.`);
+                }
+
+                // Build URL with pagination parameters
+                // Use limit=1000 (Anthropic's max) to minimize round trips
+                const params = new URLSearchParams();
+                params.set('limit', '1000');
+                if (afterId) {
+                    params.set('after_id', afterId);
+                }
+                const url = `${this.modelsUrl}?${params.toString()}`;
+
+                const response = await requestUrl({
+                    url,
+                    method: 'GET',
+                    headers: {
+                        'x-api-key': this.apiKey,
+                        'anthropic-version': this.API_VERSION
+                    }
+                });
+
+                if (response.status < 200 || response.status >= 300) {
+                    throw new Error(`Models API request failed: ${response.status}\n${response.text}`);
+                }
+
+                // Validate basic response structure
+                const data = response.json as unknown;
+                if (!data || typeof data !== 'object' || !('data' in data) || !Array.isArray((data as { data: unknown }).data)) {
+                    throw new Error('Invalid models API response structure');
+                }
+
+                // Validate that each model has required fields
+                const modelsData = (data as { data: unknown[] }).data;
+                if (!modelsData.every((model: unknown) =>
+                    model && typeof model === 'object' && 'id' in model && typeof (model as { id: unknown }).id === 'string'
+                )) {
+                    throw new Error('Invalid model structure in API response');
+                }
+
+                const pageResponse = data as ModelsListResponse;
+
+                // Accumulate models from this page, filtering out duplicates
+                for (const model of pageResponse.data) {
+                    if (!seenIds.has(model.id)) {
+                        seenIds.add(model.id);
+                        allModels.push(model);
+                    }
+                }
+
+                // Store first_id from the first page
+                if (!firstId) {
+                    firstId = pageResponse.first_id;
+                }
+
+                // Update pagination state
+                const previousAfterId: string | undefined = afterId;
+                lastId = pageResponse.last_id;
+                hasMore = pageResponse.has_more;
+
+                // Guard against cursor not advancing (would cause infinite loop)
+                if (!lastId || lastId === previousAfterId) {
+                    // Cursor didn't advance - break to prevent infinite loop
+                    console.warn('Pagination cursor did not advance. Stopping pagination.');
+                    break;
+                }
+
+                // Set up for next iteration
+                if (hasMore) {
+                    afterId = lastId;
+                }
+            }
+
+            // Sort models for stable dropdown UX across sessions/pages
+            const sorted = allModels.slice().sort((a, b) =>
+                (a.display_name ?? a.id).localeCompare(b.display_name ?? b.id)
+            );
+
+            // Recompute pagination IDs from sorted array to maintain consistency
+            // with returned data (original IDs were from unsorted API responses)
+            const sortedFirstId = sorted.length > 0 ? sorted[0].id : firstId;
+            const sortedLastId = sorted.length > 0 ? sorted[sorted.length - 1].id : lastId;
+
+            // Return combined response with all models
+            return {
+                data: sorted,
+                first_id: sortedFirstId,
+                has_more: false, // We've fetched all pages
+                last_id: sortedLastId
+            };
+        } catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error(`Network request failed: ${String(error)}`);
+        }
+    }
+
     // MARK: - Private Methods
 
+    /**
+     * Constructs the user message for prompt generation requests.
+     *
+     * If an example prompt is provided, it's included to guide the AI's style.
+     * The message emphasizes the exact output format needed for reliable parsing.
+     *
+     * @param count - Number of prompts requested
+     * @param examplePrompt - Optional example to demonstrate desired style
+     * @returns Formatted user message string
+     */
     private createUserMessage(count: number, examplePrompt: string): string {
         const baseMessage = `Generate exactly ${count} creative writing prompts. Return ONLY the numbered prompts with no additional text or commentary.`;
 
@@ -69,15 +264,25 @@ export class AnthropicClient {
         return `${baseMessage}\n\nProvide ${count} diverse writing prompts in this exact format:\n1. [prompt]\n2. [prompt]\n(etc.)`;
     }
 
+    /**
+     * Makes an HTTP request to the Anthropic Messages API.
+     *
+     * Handles authentication headers, request serialization, and basic error checking.
+     * Uses Obsidian's requestUrl for compatibility with the plugin environment.
+     *
+     * @param request - Structured request payload for the API
+     * @returns Parsed API response
+     * @throws Error if request fails or returns non-2xx status
+     */
     private async makeRequest(request: AnthropicRequest): Promise<AnthropicResponse> {
         try {
             const response = await requestUrl({
-                url: this.baseUrl,
+                url: this.messagesUrl,
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-api-key': this.apiKey,
-                    'anthropic-version': '2023-06-01'
+                    'anthropic-version': this.API_VERSION
                 },
                 body: JSON.stringify(request)
             });
@@ -95,12 +300,29 @@ export class AnthropicClient {
         }
     }
 
+    /**
+     * Parses writing prompts from the API response.
+     *
+     * Extracts text content, splits by newlines, removes numbering prefixes,
+     * and cleans whitespace to produce an array of ready-to-use prompt strings.
+     *
+     * This parsing assumes the AI follows the format specified in SYSTEM_PROMPT_SUFFIX.
+     *
+     * @param response - API response containing generated content
+     * @returns Array of cleaned prompt strings
+     * @throws Error if response is empty or contains no valid prompts
+     */
     private parsePromptsFromResponse(response: AnthropicResponse): string[] {
         if (!response.content || response.content.length === 0) {
             throw new Error('No content received from API');
         }
 
-        const text = response.content[0].text;
+        // Parse all text blocks, not just the first one
+        // Anthropic API can return multiple content blocks
+        const text = response.content
+            .filter(c => c && c.type === 'text' && typeof c.text === 'string')
+            .map(c => c.text)
+            .join('\n');
         const lines = text.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0);
@@ -108,8 +330,8 @@ export class AnthropicClient {
         const prompts: string[] = [];
 
         for (const line of lines) {
-            // Remove numbering (1., 2., etc.) and clean up the prompt
-            const cleaned = line.replace(/^\d+\.\s*/, '').trim();
+            // Remove list prefixes: numbered (1., 1)), bullets (-, *, •)
+            const cleaned = line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/, '').trim();
             if (cleaned.length > 0) {
                 prompts.push(cleaned);
             }
@@ -124,15 +346,40 @@ export class AnthropicClient {
 
     // MARK: - Configuration Methods
 
+    /**
+     * Updates the API key used for authentication.
+     * Called when the user changes their API key in settings.
+     *
+     * @param apiKey - New Anthropic API key
+     */
     updateApiKey(apiKey: string): void {
         this.apiKey = apiKey;
     }
 
+    /**
+     * Validates that an API key is configured and non-empty.
+     *
+     * @returns true if API key exists and has content, false otherwise
+     */
     validateApiKey(): boolean {
         return !!(this.apiKey && this.apiKey.trim().length > 0);
     }
 
-    async testApiKey(model: AnthropicModel): Promise<{
+    /**
+     * Tests the configured API key by making a minimal request to Claude.
+     *
+     * This method sends a simple "ping" request to verify:
+     * - The API key is valid and authorized
+     * - The network connection works
+     * - The selected model is available
+     *
+     * It uses minimal tokens (max_tokens: 10) to keep costs negligible while
+     * still exercising the full authentication and request pipeline.
+     *
+     * @param model - Claude model ID to test with
+     * @returns Detailed test result including success status, timing, and error details
+     */
+    async testApiKey(model: string): Promise<{
         success: boolean;
         message: string;
         details?: {
@@ -164,9 +411,24 @@ export class AnthropicClient {
             const response = await this.makeRequest(testRequest);
             const responseTime = Date.now() - startTime;
 
+            // Validate that the assistant actually returned "ping"
+            // This ensures the API is working correctly, not just returning a 2xx status
+            // Check all content blocks (not just first) in case of multiple text blocks
+            // Normalize to tolerate punctuation and quotes (e.g., "ping.", ""ping"")
+            const returnedText = (response.content || [])
+                .filter(c => c && c.type === 'text' && typeof c.text === 'string')
+                .map(c => c.text)
+                .join(' ')
+                .trim()
+                .toLowerCase();
+            const normalized = returnedText.replace(/^[^a-z]+|[^a-z]+$/g, '').replace(/\s+/g, '');
+            const isValid = normalized === 'ping';
+
             return {
-                success: true,
-                message: 'API key is valid and working correctly',
+                success: isValid,
+                message: isValid
+                    ? 'API key is valid and working correctly'
+                    : 'API responded but returned unexpected content',
                 details: {
                     model: response.model,
                     responseTime,
@@ -181,6 +443,17 @@ export class AnthropicClient {
         }
     }
 
+    /**
+     * Parses errors from API test attempts into user-friendly messages.
+     *
+     * Categorizes errors by HTTP status code and error type to provide
+     * specific troubleshooting guidance. This helps users quickly identify
+     * whether the issue is with their API key, account, network, or the service.
+     *
+     * @param error - Caught error object (typically an Error instance)
+     * @param responseTime - How long the request took before failing
+     * @returns Structured error result with categorization and guidance
+     */
     private parseTestError(error: unknown, responseTime: number): {
         success: boolean;
         message: string;

@@ -5,17 +5,52 @@ import { App, Editor, MarkdownView, Notice } from 'obsidian';
 import { PromptGeneratorService } from '../services/promptGenerator';
 import { FreewritingPromptsSettings } from '../types';
 
+/**
+ * Command handler for inserting writing prompts directly into notes.
+ *
+ * This command generates prompts and inserts them at the cursor position in
+ * the active note as formatted markdown. Unlike timed prompts, these are
+ * persistent and remain in the note for reference.
+ *
+ * Key responsibilities:
+ * - Validates editor and view state before execution
+ * - Generates prompts via the prompt service
+ * - Formats prompts with timestamp and numbering
+ * - Inserts at cursor with intelligent newline handling
+ * - Positions cursor after inserted content
+ *
+ * The formatting includes a timestamp to help users track when prompts were
+ * added, and numbered list format for easy reference.
+ */
 export class NotePromptsCommand {
+    /**
+     * Creates a new note prompts command handler.
+     *
+     * @param promptGenerator - Service for generating prompts from the API
+     */
     constructor(private promptGenerator: PromptGeneratorService) {}
 
     // MARK: - Public Methods
 
+    /**
+     * Executes the note prompts insertion.
+     *
+     * This method:
+     * 1. Validates that editor and view are available
+     * 2. Generates prompts through the service
+     * 3. Formats and inserts prompts at the cursor position
+     * 4. Shows success feedback to the user
+     *
+     * @param settings - Current plugin settings for generation parameters
+     * @param editor - Active editor instance for text insertion
+     * @param view - Active markdown view for context
+     */
     async execute(
         settings: FreewritingPromptsSettings,
         editor: Editor,
         view: MarkdownView
     ): Promise<void> {
-        if (!editor || !view) {
+        if (!NotePromptsCommand.canExecute(editor, view)) {
             new Notice('No active note found. Please open a note first.');
             return;
         }
@@ -42,30 +77,44 @@ export class NotePromptsCommand {
 
     // MARK: - Private Methods
 
+    /**
+     * Inserts formatted prompts into the note at the cursor position.
+     *
+     * This method handles several edge cases:
+     * - Collapses any text selection before insertion
+     * - Adds newline before if there's text before the cursor
+     * - Adds newline after if there's text after the cursor or more lines below
+     * - Positions cursor at the end of inserted content
+     *
+     * The intelligent newline handling ensures prompts don't run into existing
+     * text and maintains proper spacing in the document.
+     *
+     * @param editor - Editor instance for text manipulation
+     * @param prompts - Array of prompt strings to insert
+     */
     private insertPromptsIntoNote(editor: Editor, prompts: string[]): void {
-        const cursor = editor.getCursor();
-        const currentLine = editor.getLine(cursor.line);
+        // Normalize to an insertion point (collapse any selection)
+        const from = editor.getCursor('from');
+        const to = editor.getCursor('to');
+        const hasSelection = from.line !== to.line || from.ch !== to.ch;
+        if (hasSelection) {
+            editor.setCursor(from);
+        }
+        const cursor = editor.getCursor(); // refreshed after collapse
+        const currentLine = editor.getLine(cursor.line) ?? '';
 
-        // Determine if we need to add a newline before our content
-        const needsNewlineBefore = currentLine.trim().length > 0;
+        const hasTextBefore = cursor.ch > 0 && currentLine.slice(0, cursor.ch).trim().length > 0;
+        const hasTextAfter = cursor.ch < currentLine.length && currentLine.slice(cursor.ch).trim().length > 0;
 
         // Format the prompts
         const formattedPrompts = this.formatPrompts(prompts);
 
         // Prepare the content to insert
-        let contentToInsert = '';
-
-        if (needsNewlineBefore) {
-            contentToInsert += '\n';
-        }
-
-        contentToInsert += formattedPrompts;
-
-        // If we're not at the end of the document, add a trailing newline
         const lastLine = editor.lastLine();
-        if (cursor.line < lastLine) {
-            contentToInsert += '\n';
-        }
+        let contentToInsert = '';
+        if (hasTextBefore) contentToInsert += '\n';
+        contentToInsert += formattedPrompts;
+        if (hasTextAfter || cursor.line < lastLine) contentToInsert += '\n';
 
         // Insert the content at the cursor position
         editor.replaceSelection(contentToInsert);
@@ -75,27 +124,44 @@ export class NotePromptsCommand {
         const newCursorLine = cursor.line + lines.length - 1;
         const newCursorCh = lines[lines.length - 1].length;
 
-        if (cursor.line === lastLine && !needsNewlineBefore) {
-            // If we were at the last line and didn't add a newline before, adjust
-            editor.setCursor(cursor.line, cursor.ch + contentToInsert.length);
-        } else {
-            editor.setCursor(newCursorLine, newCursorCh);
-        }
+        editor.setCursor(newCursorLine, newCursorCh);
     }
 
+    /**
+     * Formats prompts as markdown with timestamp header and numbered list.
+     *
+     * The format is:
+     * ```
+     * ## Writing Prompts (Jan 15, 2025, 02:30 PM)
+     *
+     * 1. [First prompt]
+     *
+     * 2. [Second prompt]
+     * ```
+     *
+     * The timestamp helps users track when prompts were generated, and the
+     * numbered list makes it easy to reference specific prompts.
+     *
+     * @param prompts - Array of prompt strings to format
+     * @returns Formatted markdown string ready for insertion
+     */
     private formatPrompts(prompts: string[]): string {
-        const timestamp = new Date().toLocaleDateString('en-US', {
+        // Let Intl pick the default environment locale automatically
+        const timestamp = new Intl.DateTimeFormat(undefined, {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
-        });
+        }).format(new Date());
 
         let formatted = `## Writing Prompts (${timestamp})\n\n`;
 
         prompts.forEach((prompt, index) => {
-            formatted += `${index + 1}. ${prompt}\n\n`;
+            // Sanitize to single line: collapse whitespace and trim
+            // Prevents malformed prompts with newlines from breaking list formatting
+            const oneLine = String(prompt).replace(/\s+/g, ' ').trim();
+            formatted += `${index + 1}. ${oneLine}\n\n`;
         });
 
         return formatted;
@@ -103,10 +169,31 @@ export class NotePromptsCommand {
 
     // MARK: - Utility Methods
 
+    /**
+     * Checks whether the command can be executed in the current context.
+     *
+     * Validates that:
+     * - Editor instance exists
+     * - Markdown view exists
+     * - An actual file is open (not just an empty pane)
+     *
+     * @param editor - Editor instance to validate
+     * @param view - Markdown view to validate
+     * @returns true if command can execute, false otherwise
+     */
     static canExecute(editor: Editor, view: MarkdownView): boolean {
         return !!(editor && view && view.file);
     }
 
+    /**
+     * Retrieves the current execution context from the app.
+     *
+     * Helper method for getting the active editor and view without having
+     * them explicitly passed. Useful for manual command invocation.
+     *
+     * @param app - Obsidian app instance
+     * @returns Object containing editor and view, or nulls if not available
+     */
     static getExecutionContext(app: App): { editor: Editor | null; view: MarkdownView | null } {
         const activeView = app.workspace.getActiveViewOfType(MarkdownView);
 

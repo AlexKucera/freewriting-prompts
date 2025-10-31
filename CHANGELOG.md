@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.1] - 2025-01-21
+## [1.1.1] - 2025-09-21
 
 ### Added
 - Plugin combination recommendations for enhanced writing workflow
@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced code quality and maintainability
 - **Settings UI**: Removed redundant "Settings" text from settings tab heading
 
-## [1.1.0] - 2025-01-20
+## [1.1.0] - 2025-09-20
 
 ### Changed
 - **Enhanced Staggered Prompts**: Now generates ultra-short, direct prompts perfect for quick responses (1-5 words or single sentence)
@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dynamic notification duration based on user delay settings
 - Enhanced Claude model support including latest Opus 4.1 and Sonnet models
 
-## [1.0.0] - 2025-01-20
+## [1.0.0] - 2025-09-19
 
 ### Added
 - **Staggered Freewriting Prompts** command for timed writing sessions
@@ -87,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input validation for all user settings
 - Rate limiting awareness with appropriate error handling
 
-[Unreleased]: https://github.com/alexanderkucera/obsidian-freewriting-prompts/compare/1.1.0...HEAD
-[1.1.0]: https://github.com/alexanderkucera/obsidian-freewriting-prompts/compare/1.0.0...1.1.0
-[1.0.0]: https://github.com/alexanderkucera/obsidian-freewriting-prompts/releases/tag/1.0.0
+[Unreleased]: https://github.com/AlexKucera/freewriting-prompts/compare/1.1.1...HEAD
+[1.1.1]: https://github.com/AlexKucera/freewriting-prompts/compare/1.1.0...1.1.1
+[1.1.0]: https://github.com/AlexKucera/freewriting-prompts/compare/1.0.0...1.1.0
+[1.0.0]: https://github.com/AlexKucera/freewriting-prompts/releases/tag/1.0.0
