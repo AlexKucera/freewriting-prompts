@@ -408,8 +408,14 @@ export class AnthropicClient {
 
             // Validate that the assistant actually returned "ping"
             // This ensures the API is working correctly, not just returning a 2xx status
+            // Check all content blocks (not just first) in case of multiple text blocks
             // Normalize to tolerate punctuation and quotes (e.g., "ping.", ""ping"")
-            const returnedText = (response.content?.[0]?.text || '').trim().toLowerCase();
+            const returnedText = (response.content || [])
+                .filter(c => c && c.type === 'text' && typeof c.text === 'string')
+                .map(c => c.text)
+                .join(' ')
+                .trim()
+                .toLowerCase();
             const normalized = returnedText.replace(/^[^a-z]+|[^a-z]+$/g, '').replace(/\s+/g, '');
             const isValid = normalized === 'ping';
 
