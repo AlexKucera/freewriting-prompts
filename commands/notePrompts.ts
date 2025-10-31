@@ -158,7 +158,10 @@ export class NotePromptsCommand {
         let formatted = `## Writing Prompts (${timestamp})\n\n`;
 
         prompts.forEach((prompt, index) => {
-            formatted += `${index + 1}. ${prompt}\n\n`;
+            // Sanitize to single line: collapse whitespace and trim
+            // Prevents malformed prompts with newlines from breaking list formatting
+            const oneLine = String(prompt).replace(/\s+/g, ' ').trim();
+            formatted += `${index + 1}. ${oneLine}\n\n`;
         });
 
         return formatted;
