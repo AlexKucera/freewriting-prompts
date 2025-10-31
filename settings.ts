@@ -201,7 +201,16 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                         this.plugin.settings.timedCount = count;
                         await this.plugin.saveSettings();
                     }
-                }));
+                }))
+            .then(setting => {
+                const input = setting.controlEl.querySelector('input');
+                if (input) {
+                    input.setAttribute('type', 'number');
+                    input.setAttribute('min', '1');
+                    input.setAttribute('max', '50');
+                    input.setAttribute('step', '1');
+                }
+            });
 
         new Setting(containerEl)
             .setName('Delay Between Prompts')
@@ -215,7 +224,16 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                         this.plugin.settings.delaySeconds = delay;
                         await this.plugin.saveSettings();
                     }
-                }));
+                }))
+            .then(setting => {
+                const input = setting.controlEl.querySelector('input');
+                if (input) {
+                    input.setAttribute('type', 'number');
+                    input.setAttribute('min', '1');
+                    input.setAttribute('max', '300');
+                    input.setAttribute('step', '1');
+                }
+            });
 
         new Setting(containerEl)
             .setName('Note Prompts Count')
@@ -229,7 +247,16 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                         this.plugin.settings.noteCount = count;
                         await this.plugin.saveSettings();
                     }
-                }));
+                }))
+            .then(setting => {
+                const input = setting.controlEl.querySelector('input');
+                if (input) {
+                    input.setAttribute('type', 'number');
+                    input.setAttribute('min', '1');
+                    input.setAttribute('max', '20');
+                    input.setAttribute('step', '1');
+                }
+            });
 
         // MARK: - Prompt Customization
 
@@ -303,6 +330,8 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                     // Show a temporary notice
                     const notice = new Notice('Model list cache cleared');
                     setTimeout(() => notice.hide(), 2000);
+                    // Persist the cleared cache so it doesn't restore on restart
+                    void this.plugin.saveSettings();
                 }));
     }
 
