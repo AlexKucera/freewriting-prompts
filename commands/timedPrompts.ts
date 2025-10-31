@@ -177,8 +177,8 @@ export class TimedPromptsCommand {
             const totalPrompts = this.promptQueue.length;
 
             // Calculate notification duration: slightly less than delay to avoid overlap
-            // For delays >1s, end 500ms before next tick
-            // For delays <=1s, use 900ms or delay-100ms (whichever is smaller)
+            // For delays >=1s, end 500ms before next tick
+            // For delays <1s, use 900ms or delay-100ms (whichever is smaller)
             // Clamp to minimum 300ms to prevent flicker/invisible notices
             const delayMs = Math.max(0, delaySeconds * 1000);
             const notificationDuration =
