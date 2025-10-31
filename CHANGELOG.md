@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-10-31
+
+### Added
+- Dynamic model fetching from Anthropic API
+- Pagination support for Anthropic models API
+- Fallback for unavailable AI models
+- User notification for ongoing timed prompts
+- API key validation and model sorting
+- Type refinement for dynamic model selection
+- Required Claude model validation check
+- Deduplication for concurrent prompt generation
+- Input constraints to settings numeric fields
+- Debounce mechanism for API key refresh
+- DocStrings throughout codebase
+
+### Changed
+- Improves timed prompt notification duration calculation
+- Enhances model selection and caching in settings
+- Refactors model fetching with deduplication strategy
+- Improves model list pagination with safety measures
+- Refactors Anthropic API client configuration
+- Optimizes settings handling with debounce and async improvements
+- Improves timestamp localization for note prompts
+- Improves data loading with robust error handling
+- Improves model fetching resilience and performance
+- Enhances ESLint configuration for TypeScript project
+- Improves timed prompts command concurrency handling
+- Improves model fallback and settings handling
+- Optimizes settings and API key management
+- Improves Anthropic API client robustness
+- Extracts note command execute validation logic
+- Updates ANTHROPIC_MODELS with latest model versions
+- Updates ESLint configuration to latest standards
+- Improves prompt insertion logic and timestamp formatting
+- Improves Anthropic models API response validation
+- Improves async model loading for settings UI
+- Optimizes token usage for timed prompts
+- Improves model selection fallback handling
+- Simplifies data loading and initialization logic
+- Improves model fetch error notification message
+- Simplifies cursor placement after prompt insertion
+- Updates project license badge to GPL v3
+- Updates repository URLs and links
+- Updates author and license info
+
+### Fixed
+- Pagination ID consistency in model sorting
+- Cross-key model cache leakage
+- Timed prompts generation race condition
+- Broken links in README
+- Empty cache arrays guard
+- Race conditions in timed prompts
+- Removes unnecessary error notification
+- Refines notification timing for timed prompts
+- Sanitizes writing prompts for consistent formatting
+- Refines timed prompt notification duration logic
+- Improves ping response validation robustness
+
 ## [1.1.1] - 2025-09-21
 
 ### Added
@@ -87,7 +145,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input validation for all user settings
 - Rate limiting awareness with appropriate error handling
 
-[Unreleased]: https://github.com/AlexKucera/freewriting-prompts/compare/1.1.1...HEAD
+[Unreleased]: https://github.com/AlexKucera/freewriting-prompts/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/AlexKucera/freewriting-prompts/compare/1.1.1...1.2.0
 [1.1.1]: https://github.com/AlexKucera/freewriting-prompts/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/AlexKucera/freewriting-prompts/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/AlexKucera/freewriting-prompts/releases/tag/1.0.0
