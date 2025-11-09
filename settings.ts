@@ -116,10 +116,6 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        new Setting(containerEl)
-            .setName('Freewriting prompts')
-            .setHeading();
-
         // MARK: - API Configuration
 
         new Setting(containerEl)
