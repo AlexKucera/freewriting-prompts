@@ -190,7 +190,7 @@ export class TimedPromptsCommand {
             );
 
             // Add CSS class for styling
-            const noticeEl = notice.noticeEl;
+            const noticeEl = notice.messageEl;
             if (noticeEl) {
                 noticeEl.addClass('freewriting-prompt-notice');
             }

@@ -157,7 +157,7 @@ export default class FreewritingPromptsPlugin extends Plugin {
         // Timed prompts command
         this.addCommand({
             id: 'timed-prompts',
-            name: 'Show Timed Prompts',
+            name: 'Show timed prompts',
             callback: async () => {
                 await this.executeTimedPrompts();
             }
@@ -166,7 +166,7 @@ export default class FreewritingPromptsPlugin extends Plugin {
         // Note prompt command (editor-based)
         this.addCommand({
             id: 'note-prompts',
-            name: 'Add Note Prompts',
+            name: 'Add note prompts',
             editorCallback: async (editor: Editor, view: MarkdownView) => {
                 await this.executeNotePrompts(editor, view);
             }
@@ -175,7 +175,7 @@ export default class FreewritingPromptsPlugin extends Plugin {
         // Stop timed prompts command
         this.addCommand({
             id: 'stop-timed-prompts',
-            name: 'Stop Timed Prompts',
+            name: 'Stop timed prompts',
             callback: () => {
                 this.stopTimedPrompts();
             }
@@ -198,7 +198,7 @@ export default class FreewritingPromptsPlugin extends Plugin {
     private async executeTimedPrompts(): Promise<void> {
         // Check if timed prompts are already running
         if (this.timedCommand.isRunning()) {
-            new Notice('Timed prompts are already running. Use "Stop Timed Prompts" to stop them first.');
+            new Notice('Timed prompts are already running. Use "Stop timed prompts" to stop them first.');
             return;
         }
 

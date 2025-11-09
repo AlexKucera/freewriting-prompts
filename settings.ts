@@ -116,14 +116,18 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: 'Freewriting Prompts' });
+        new Setting(containerEl)
+            .setName('Freewriting prompts')
+            .setHeading();
 
         // MARK: - API Configuration
 
-        containerEl.createEl('h3', { text: 'API Configuration' });
+        new Setting(containerEl)
+            .setName('API configuration')
+            .setHeading();
 
         new Setting(containerEl)
-            .setName('Anthropic API Key')
+            .setName('Anthropic API key')
             .setDesc('Your Anthropic API key for Claude. Get one at https://console.anthropic.com/')
             .addText(text => text
                 .setPlaceholder('sk-ant-...')
@@ -158,16 +162,16 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName('Test API Key')
+            .setName('Test API key')
             .setDesc('Test your API key to verify it works correctly')
             .addButton(button => button
-                .setButtonText('Test Connection')
+                .setButtonText('Test connection')
                 .onClick(() => {
                     void this.testApiKey(button);
                 }));
 
         new Setting(containerEl)
-            .setName('Claude Model')
+            .setName('Claude model')
             .setDesc('Which Claude model to use for generating prompts')
             .addDropdown(dropdown => {
                 this.modelDropdown = dropdown;
@@ -187,10 +191,12 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
 
         // MARK: - Command Configuration
 
-        containerEl.createEl('h3', { text: 'Command Configuration' });
+        new Setting(containerEl)
+            .setName('Command configuration')
+            .setHeading();
 
         new Setting(containerEl)
-            .setName('Timed Prompts Count')
+            .setName('Timed prompts count')
             .setDesc('Number of prompts to generate for timed notifications (1-50)')
             .addText(text => text
                 .setPlaceholder('10')
@@ -213,7 +219,7 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName('Delay Between Prompts')
+            .setName('Delay between prompts')
             .setDesc('Seconds to wait between each timed prompt notification (1-300)')
             .addText(text => text
                 .setPlaceholder('6')
@@ -236,7 +242,7 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName('Note Prompts Count')
+            .setName('Note prompts count')
             .setDesc('Number of prompts to append to the current note (1-20)')
             .addText(text => text
                 .setPlaceholder('3')
@@ -260,10 +266,12 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
 
         // MARK: - Prompt Customization
 
-        containerEl.createEl('h3', { text: 'Prompt Customization' });
+        new Setting(containerEl)
+            .setName('Prompt customization')
+            .setHeading();
 
         new Setting(containerEl)
-            .setName('System Prompt')
+            .setName('System prompt')
             .setDesc('Instructions for the AI on how to generate prompts')
             .addTextArea(text => text
                 .setPlaceholder('You are a creative writing assistant...')
@@ -277,7 +285,7 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName('Timed Prompts Example')
+            .setName('Timed prompts example')
             .setDesc('Example prompt to guide the style for timed notifications')
             .addTextArea(text => text
                 .setPlaceholder('Write about a character who...')
@@ -291,7 +299,7 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName('Note Prompts Example')
+            .setName('Note prompts example')
             .setDesc('Example prompt to guide the style for note prompts')
             .addTextArea(text => text
                 .setPlaceholder('Describe a world where...')
@@ -306,13 +314,15 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
 
         // MARK: - Actions
 
-        containerEl.createEl('h3', { text: 'Actions' });
+        new Setting(containerEl)
+            .setName('Actions')
+            .setHeading();
 
         new Setting(containerEl)
-            .setName('Clear Cache')
+            .setName('Clear cache')
             .setDesc('Clear the cached prompts to force regeneration')
             .addButton(button => button
-                .setButtonText('Clear Cache')
+                .setButtonText('Clear cache')
                 .onClick(() => {
                     this.plugin.promptGenerator.clearCache();
                     // Show a temporary notice
@@ -321,10 +331,10 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('Clear Model List Cache')
+            .setName('Clear model list cache')
             .setDesc('Clear cached Claude model list to force a fresh fetch from the API')
             .addButton(button => button
-                .setButtonText('Clear Models Cache')
+                .setButtonText('Clear models cache')
                 .onClick(() => {
                     this.plugin.modelService.clearCache();
                     // Show a temporary notice
@@ -488,7 +498,7 @@ export class FreewritingPromptsSettingTab extends PluginSettingTab {
      * @param button - Button component to update with loading state
      */
     private async testApiKey(button: ButtonComponent): Promise<void> {
-        const originalText = button.buttonEl.textContent || 'Test Connection';
+        const originalText = button.buttonEl.textContent || 'Test connection';
 
         // Update button to show loading state
         button.setButtonText('Testing...');
